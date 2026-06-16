@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+
+# Environment files (local secrets)
+environments/.env.local
+
+# Editor / OS
+.DS_Store
+*.local
+.vscode/settings.json
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Test coverage
+coverage/

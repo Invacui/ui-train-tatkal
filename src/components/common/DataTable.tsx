@@ -1,9 +1,19 @@
+/**
+ * @file Data Table component
+ * @module components/common/DataTable
+ * @description A generic data table built on @tanstack/react-table with
+ *   shadcn styling. Handles loading skeletons, empty state, and row rendering.
+ */
+
+// TanStack React Table for headless table logic
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
+
+// Shadcn table components
 import {
   Table,
   TableBody,
@@ -12,14 +22,29 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+
+// Shadcn skeleton for loading placeholder
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface DataTableProps<TData, TValue> {
+  /** Column definitions from @tanstack/react-table */
   columns: ColumnDef<TData, TValue>[];
+  /** Array of data rows to display */
   data: TData[];
+  /** When true, renders skeleton loading rows */
   isLoading?: boolean | undefined;
 }
 
+/**
+ * DataTable
+ * @description A generic data table that renders a TanStack React Table
+ *   with shadcn styling. Shows skeleton placeholders while loading
+ *   and a "No results" message when data is empty.
+ * @template TData - The type of each row in the data array
+ * @template TValue - The value type for column cells
+ * @param props DataTableProps
+ * @returns A fully styled table component
+ */
 export function DataTable<TData, TValue>({
   columns,
   data,

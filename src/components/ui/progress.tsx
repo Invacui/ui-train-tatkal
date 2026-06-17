@@ -1,7 +1,23 @@
+/**
+ * @file Shadcn Progress component
+ * @module components/ui/progress
+ * @description Wraps @radix-ui/react-progress to render a progress bar
+ *   with animated fill indicator.
+ */
+
+// React core
 import * as React from 'react';
+
+// Radix UI progress primitive
 import * as ProgressPrimitive from '@radix-ui/react-progress';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
+/**
+ * Progress
+ * @description A progress bar with animated fill indicator based on a value (0-100).
+ */
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>

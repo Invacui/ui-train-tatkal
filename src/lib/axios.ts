@@ -1,7 +1,24 @@
+/**
+ * @file Axios HTTP client
+ * @description Configures the Axios instance with auth interceptors for token attachment and silent token refresh on 401
+ * @module lib
+ */
+
+// Axios HTTP client
 import axios from "axios";
+// Redux store for accessing persisted auth state
 import { store } from "@/store";
+// Auth actions for token management
 import { setToken, clearAuth } from "@/store/auth.slice";
 
+/**
+ * api
+ * @description Pre-configured Axios instance pointing to the backend API.
+ *   - Automatically attaches the Bearer access token from Redux state to every request.
+ *   - On a 401 response, attempts a silent token refresh via the refresh endpoint.
+ *   - Queues concurrent requests during refresh and retries them with the new token.
+ *   - Redirects to login on refresh failure (unless already on the login page).
+ */
 export const api = axios.create({
   baseURL: import.meta.env.APP_API_URL + "/api/v1",
   withCredentials: true,
@@ -50,8 +67,8 @@ api.interceptors.response.use(
 
     try {
       const { data } = await axios.post<{ success: boolean; data: { accessToken: string } }>(
-        `${import.meta.env.APP_API_URL}/api/v1/auth/refresh`,
-        {},
+        `${import.meta.env.APP_API_URL}/api/v1/auth/refresh-token`,
+        { refreshToken: store.getState().auth.refreshToken },
         { withCredentials: true }
       );
       const nextAccessToken = data.data.accessToken;

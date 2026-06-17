@@ -1,7 +1,23 @@
+/**
+ * @file Shadcn Avatar component primitives
+ * @module components/ui/avatar
+ * @description Wraps @radix-ui/react-avatar to provide Avatar, AvatarImage,
+ *   and AvatarFallback components with consistent styling.
+ */
+
+// React core
 import * as React from 'react';
+
+// Radix UI avatar primitive
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
+/**
+ * Avatar
+ * @description Circular container that wraps the avatar image and fallback.
+ */
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
@@ -14,6 +30,10 @@ const Avatar = React.forwardRef<
 ));
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
+/**
+ * AvatarImage
+ * @description The avatar image element — renders the user's profile picture.
+ */
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
@@ -26,6 +46,11 @@ const AvatarImage = React.forwardRef<
 ));
 AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 
+/**
+ * AvatarFallback
+ * @description Fallback content (e.g. initials) shown when the avatar image
+ *   fails to load or is not provided.
+ */
 const AvatarFallback = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Fallback>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>

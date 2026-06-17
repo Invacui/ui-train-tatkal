@@ -1,7 +1,23 @@
+/**
+ * @file Shadcn Label component
+ * @module components/ui/label
+ * @description Wraps @radix-ui/react-label to render a styled form label
+ *   with peer-disabled state support.
+ */
+
+// React core
 import * as React from 'react';
+
+// Radix UI label primitive
 import * as LabelPrimitive from '@radix-ui/react-label';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
+/**
+ * Label
+ * @description Styled form label with peer-disabled support via Radix.
+ */
 const Label = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>

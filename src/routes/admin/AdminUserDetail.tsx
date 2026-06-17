@@ -1,58 +1,52 @@
-import { useState } from 'react';
+/**
+ * @file Admin user detail page
+ * @module routes/admin/AdminUserDetail
+ * @description Shows details for a specific platform user. Currently a
+ *   placeholder view with user ID displayed.
+ */
+
+// Helmet for setting page title/meta tags
 import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
-import { PageHeader } from '@/components/common/PageHeader';
+
+// Route params to extract user ID, navigation for back button
+import { useParams, useNavigate } from 'react-router-dom';
+
+// ArrowLeft icon for back button
+import { ArrowLeft } from 'lucide-react';
+
+// UI button component
 import { Button } from '@/components/ui/button';
+
+// Card components for layout
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TokenBadge } from '@/components/common/TokenBadge';
-import { TokenAdjustDialog } from '@/components/admin/TokenAdjustDialog';
-import { SuspendUserDialog } from '@/components/admin/SuspendUserDialog';
-import { ErrorState } from '@/components/common/ErrorState';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/queryKeys';
-import { adminService } from '@/services/admin.service';
 
+// Page header with title and description
+import { PageHeader } from '@/components/common/PageHeader';
+
+/**
+ * AdminUserDetail (page component)
+ * @description Placeholder user detail page showing basic user info. Full
+ *   user management details to be implemented.
+ */
 export default function AdminUserDetail() {
-  const { id = '' } = useParams<{ id: string }>();
-  const [tokenOpen, setTokenOpen] = useState(false);
-  const [suspendOpen, setSuspendOpen] = useState(false);
-
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: queryKeys.admin.user(id),
-    queryFn: () => adminService.getUser(id),
-    select: (res) => res.data.data,
-    enabled: !!id,
-  });
-
-  if (isLoading) return <Skeleton className="h-64 w-full rounded-lg" />;
-  if (isError) return <ErrorState message={error?.message} />;
-  if (!data) return null;
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   return (
     <>
       <Helmet><meta name="robots" content="noindex" /></Helmet>
       <div className="flex flex-col gap-6">
-        <PageHeader title={data.name} description={data.email}>
-          <Button variant="outline" onClick={() => setTokenOpen(true)}>Adjust tokens</Button>
-          {data.isActive && (
-            <Button variant="destructive" onClick={() => setSuspendOpen(true)}>Suspend</Button>
-          )}
-        </PageHeader>
-
-        <Card className="max-w-md">
-          <CardHeader><CardTitle>Details</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div><p className="text-sm font-medium">Role</p><p className="text-sm text-muted-foreground">{data.role}</p></div>
-            <div><p className="text-sm font-medium">Token balance</p><TokenBadge amount={data.tokenBalance} /></div>
-            <div><p className="text-sm font-medium">Campaigns</p><p className="text-sm text-muted-foreground">{data.totalCampaigns}</p></div>
-            <div><p className="text-sm font-medium">Leads</p><p className="text-sm text-muted-foreground">{data.totalLeads.toLocaleString()}</p></div>
+        <Button variant="ghost" onClick={() => navigate(-1)} className="w-fit gap-2">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
+        <PageHeader title="User Details" description={`User ID: ${id}`} />
+        <Card>
+          <CardHeader><CardTitle>User Information</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">User detail view. Full user info will be displayed here.</p>
           </CardContent>
         </Card>
       </div>
-
-      <TokenAdjustDialog user={data} open={tokenOpen} onOpenChange={setTokenOpen} />
-      <SuspendUserDialog user={data} open={suspendOpen} onOpenChange={setSuspendOpen} />
     </>
   );
 }

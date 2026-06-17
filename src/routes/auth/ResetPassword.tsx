@@ -1,62 +1,68 @@
-import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { authService } from '@/services/auth.service';
-import { ROUTES } from '@/constants/routes';
+/**
+ * @file Reset password page
+ * @module routes/auth/ResetPassword
+ * @description Allows users to set a new password using an OTP sent to their
+ *   email. The email is passed via query parameter.
+ */
 
+// React Hook Form for form state management
+import { useForm } from 'react-hook-form';
+
+// URL search params to extract the email query parameter
+import { useSearchParams } from 'react-router-dom';
+
+// UI button component
+import { Button } from '@/components/ui/button';
+
+// UI input component
+import { Input } from '@/components/ui/input';
+
+// Custom hook for reset-password mutation
+import { useResetPassword } from '@/hooks/auth/useResetPassword';
+
+// Validation rules and form value types
+import { validationRules, type ResetPasswordFormValues } from '@/lib/validationRules';
+
+/**
+ * ResetPassword (page component)
+ * @description Renders the password reset form requiring OTP, new password,
+ *   and confirm password. Reads the user's email from the URL query params.
+ */
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const token = searchParams.get('token') ?? '';
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: () => authService.resetPassword({ token, password }),
-    onSuccess: () => {
-      toast.success('Password reset. Please log in.');
-      navigate(ROUTES.login);
-    },
-    onError: () => toast.error('Reset failed. The link may have expired.'),
-  });
+  const email = searchParams.get('email') || '';
+  const { mutate, isPending } = useResetPassword();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<ResetPasswordFormValues>();
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="text-xl font-semibold">Reset password</h2>
-        <p className="text-sm text-muted-foreground">Enter your new password below.</p>
+        <p className="text-sm text-muted-foreground">Enter the OTP sent to your email</p>
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">New password</label>
-        <Input
-          type="password"
-          placeholder="At least 8 characters"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Confirm password</label>
-        <Input
-          type="password"
-          placeholder="••••••••"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-        />
-      </div>
-
-      <Button
-        onClick={() => mutate()}
-        disabled={!password || password !== confirm || isPending}
-        className="w-full"
+      <form
+        onSubmit={handleSubmit((v) => mutate({ email, otp: v.otp || '', newPassword: v.password }))}
+        className="flex flex-col gap-4"
       >
-        {isPending ? 'Resetting…' : 'Reset password'}
-      </Button>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">OTP</label>
+          <Input placeholder="6-digit OTP" {...register('otp', validationRules.default)} />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">New password</label>
+          <Input type="password" {...register('password', validationRules.password)} />
+          {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Confirm password</label>
+          <Input type="password" {...register('confirmPassword', validationRules.confirmPassword(watch))} />
+          {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+        </div>
+        <Button type="submit" disabled={isPending} className="w-full">
+          {isPending ? 'Resetting…' : 'Reset password'}
+        </Button>
+      </form>
     </div>
   );
 }

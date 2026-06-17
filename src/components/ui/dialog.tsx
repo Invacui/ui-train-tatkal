@@ -1,13 +1,36 @@
+/**
+ * @file Shadcn Dialog component primitives
+ * @module components/ui/dialog
+ * @description Wraps @radix-ui/react-dialog to provide modal dialog components
+ *   (Dialog, DialogTrigger, DialogPortal, DialogClose, DialogOverlay,
+ *   DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription).
+ */
+
+// React core
 import * as React from 'react';
+
+// Radix UI dialog primitive
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+
+// Close icon
 import { X } from 'lucide-react';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
+/** Dialog — root Radix dialog primitive */
 const Dialog = DialogPrimitive.Root;
+/** DialogTrigger — element that opens the dialog */
 const DialogTrigger = DialogPrimitive.Trigger;
+/** DialogPortal — teleports dialog content in the DOM */
 const DialogPortal = DialogPrimitive.Portal;
+/** DialogClose — element that closes the dialog */
 const DialogClose = DialogPrimitive.Close;
 
+/**
+ * DialogOverlay
+ * @description Semi-transparent backdrop rendered behind the dialog content.
+ */
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -23,6 +46,10 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+/**
+ * DialogContent
+ * @description The modal panel containing dialog content, overlay, and close button.
+ */
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
@@ -47,11 +74,19 @@ const DialogContent = React.forwardRef<
 ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
+/**
+ * DialogHeader
+ * @description Header layout for the dialog, typically containing title and description.
+ */
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)} {...props} />
 );
 DialogHeader.displayName = 'DialogHeader';
 
+/**
+ * DialogFooter
+ * @description Footer layout for the dialog, typically containing action buttons.
+ */
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)}
@@ -60,6 +95,10 @@ const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 );
 DialogFooter.displayName = 'DialogFooter';
 
+/**
+ * DialogTitle
+ * @description Accessible title for the dialog.
+ */
 const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
@@ -72,6 +111,10 @@ const DialogTitle = React.forwardRef<
 ));
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
+/**
+ * DialogDescription
+ * @description Accessible description text for the dialog.
+ */
 const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>

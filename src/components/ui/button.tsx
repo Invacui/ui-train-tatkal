@@ -1,6 +1,21 @@
+/**
+ * @file Shadcn Button component
+ * @module components/ui/button
+ * @description Renders a styled button with variant (default, destructive,
+ *   outline, secondary, ghost, link) and size (default, sm, lg, icon) options.
+ *   Supports asChild to merge with Radix Slot.
+ */
+
+// React core
 import * as React from 'react';
+
+// Radix slot for polymorphic children
 import { Slot } from '@radix-ui/react-slot';
+
+// Class-variance-authority for variant management
 import { cva, type VariantProps } from 'class-variance-authority';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
@@ -35,6 +50,12 @@ export interface ButtonProps
   asChild?: boolean;
 }
 
+/**
+ * Button
+ * @description Renders a styled button with variant and size options.
+ *   When asChild is true, merges with Radix Slot for polymorphic children.
+ * @param props ButtonProps — variant, size, asChild, and standard button attributes
+ */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';

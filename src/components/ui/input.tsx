@@ -1,8 +1,22 @@
+/**
+ * @file Shadcn Input component
+ * @module components/ui/input
+ * @description Renders a styled text input field with consistent border,
+ *   focus ring, and disabled styling.
+ */
+
+// React core
 import * as React from 'react';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
+/**
+ * Input
+ * @description Styled text input with border, focus ring, and disabled styling.
+ */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
     return (

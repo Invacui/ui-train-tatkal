@@ -1,12 +1,39 @@
-import { Link } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useLogin } from "@/hooks/auth/useLogin";
-import { validationRules, type LoginFormValues } from "@/lib/validationRules";
-import { ROUTES } from "@/constants/routes";
-import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
+/**
+ * @file Login page
+ * @module routes/auth/Login
+ * @description User login page with email/password form and Google OAuth.
+ *   On success, redirects based on the user's role.
+ */
 
+// Link for navigation to signup and forgot-password routes
+import { Link } from 'react-router-dom';
+
+// React Hook Form for form state management
+import { useForm } from 'react-hook-form';
+
+// UI button component
+import { Button } from '@/components/ui/button';
+
+// UI input component
+import { Input } from '@/components/ui/input';
+
+// Custom hook for login mutation
+import { useLogin } from '@/hooks/auth/useLogin';
+
+// Validation rules and form value types
+import { validationRules, type LoginFormValues } from '@/lib/validationRules';
+
+// Route constants for navigation links
+import { ROUTES } from '@/constants/routes';
+
+// Google OAuth login button
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
+
+/**
+ * Login (page component)
+ * @description Renders the login page with email/password form and Google OAuth
+ *   button. Uses useLogin mutation hook. Redirects based on user role on success.
+ */
 export default function Login() {
   const { mutate, isPending } = useLogin();
   const {
@@ -28,7 +55,7 @@ export default function Login() {
           <Input
             type="email"
             placeholder="you@example.com"
-            {...register("email", validationRules.email)}
+            {...register('email', validationRules.email)}
           />
           {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
         </div>
@@ -38,20 +65,21 @@ export default function Login() {
             <label className="text-sm font-medium">Password</label>
             <Link
               to={ROUTES.forgotPassword}
-              className="text-xs text-muted-foreground hover:underline">
+              className="text-xs text-muted-foreground hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
           <Input
             type="password"
             placeholder="••••••••"
-            {...register("password", validationRules.password)}
+            {...register('password', validationRules.password)}
           />
           {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
         </div>
 
         <Button type="submit" disabled={isPending} className="w-full">
-          {isPending ? "Signing in…" : "Sign in"}
+          {isPending ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
 
@@ -62,7 +90,7 @@ export default function Login() {
       <GoogleAuthButton redirectTo={ROUTES.dashboard} />
 
       <p className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
+        Don&apos;t have an account?{' '}
         <Link to={ROUTES.signup} className="font-medium text-primary hover:underline">
           Sign up
         </Link>

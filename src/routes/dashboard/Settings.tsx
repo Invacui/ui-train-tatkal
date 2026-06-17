@@ -1,62 +1,117 @@
-import { Helmet } from 'react-helmet-async';
-import { PageHeader } from '@/components/common/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { selectUser } from '@/store/auth.slice';
-import { TokenBadge } from '@/components/common/TokenBadge';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { authService } from '@/services/auth.service';
-import { toast } from 'sonner';
-import { updateUser } from '@/store/auth.slice';
+/**
+ * @file Account settings page
+ * @module routes/dashboard/Settings
+ * @description Account management page with profile editing (name, email, phone)
+ *   and a change-password form.
+ */
 
+// Helmet for setting page title/meta tags
+import { Helmet } from 'react-helmet-async';
+
+// React Hook Form for form state management
+import { useForm } from 'react-hook-form';
+
+// UI button component
+import { Button } from '@/components/ui/button';
+
+// UI input component
+import { Input } from '@/components/ui/input';
+
+// Card components for layout
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Page header with title and description
+import { PageHeader } from '@/components/common/PageHeader';
+
+// Redux hooks for accessing auth state
+import { useAppSelector } from '@/store/hooks';
+
+// Selector to access current user info
+import { selectUser } from '@/store/auth.slice';
+
+// Custom hook for updating user profile
+import { useUpdateProfile } from '@/hooks/auth/useUpdateProfile';
+
+// Custom hook for changing password
+import { useChangePassword } from '@/hooks/auth/useChangePassword';
+
+// Validation rules for form fields
+import { validationRules } from '@/lib/validationRules';
+
+// Toast notification for success feedback
+import { toast } from 'sonner';
+
+/**
+ * Settings (page component)
+ * @description Renders account settings with a profile form (name, email,
+ *   phone) pre-filled from Redux state and a change-password form. Each form
+ *   submits independently via its respective mutation hook.
+ */
 export default function Settings() {
   const user = useAppSelector(selectUser);
-  const dispatch = useAppDispatch();
-  const [name, setName] = useState(user?.name || '');
-  const [saving, setSaving] = useState(false);
+  const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
+  const { mutate: changePassword, isPending: isChanging } = useChangePassword();
 
-  const handleSave = async () => {
-    if (!name.trim()) return;
-    try {
-      setSaving(true);
-      const res = await authService.updateMe({ name: name.trim() });
-      dispatch(updateUser(res.data.data));
-      toast.success('Profile updated');
-    } catch (error: any) {
-      toast.error(error?.response?.data?.error || 'Failed to update profile');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { register: regProfile, handleSubmit: submitProfile } = useForm({
+    defaultValues: { name: user?.name || '', email: user?.email || '', phone: user?.phone || '' },
+  });
+
+  const { register: regPassword, handleSubmit: submitPassword, watch, reset: resetPassword } = useForm();
 
   return (
     <>
       <Helmet><meta name="robots" content="noindex" /></Helmet>
       <div className="flex flex-col gap-6">
-        <PageHeader title="Settings" description="Manage your account and preferences." />
+        <PageHeader title="Settings" description="Manage your account" />
 
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Account</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm font-medium">Name</p>
-              <div className="mt-2 flex gap-2">
-                <Input value={name} onChange={(e) => setName(e.target.value)} />
-                <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
+        <Card>
+          <CardHeader><CardTitle>Profile</CardTitle></CardHeader>
+          <CardContent>
+            <form onSubmit={submitProfile((v) => updateProfile(v, { onSuccess: () => toast.success('Profile updated') }))} className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Name</label>
+                  <Input {...regProfile('name', validationRules.name)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Email</label>
+                  <Input {...regProfile('email', validationRules.email)} disabled />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Phone</label>
+                  <Input {...regProfile('phone', validationRules.phone)} />
+                </div>
               </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Email</p>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Token balance</p>
-              {user && <TokenBadge amount={user.tokenBalance} />}
-            </div>
+              <Button type="submit" disabled={isUpdating} className="w-fit">
+                {isUpdating ? 'Saving…' : 'Save changes'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
+          <CardContent>
+            <form onSubmit={submitPassword((v) => changePassword(
+              { oldPassword: v.oldPassword, newPassword: v.newPassword },
+              { onSuccess: () => resetPassword() },
+            ))} className="flex flex-col gap-4 sm:max-w-sm">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Current password</label>
+                <Input type="password" {...regPassword('oldPassword', validationRules.password)} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">New password</label>
+                <Input type="password" {...regPassword('newPassword', validationRules.password)} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Confirm new password</label>
+                <Input type="password" {...regPassword('confirmPassword', validationRules.confirmPassword(watch))} />
+              </div>
+              <Button type="submit" disabled={isChanging} className="w-fit">
+                {isChanging ? 'Updating…' : 'Change password'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>

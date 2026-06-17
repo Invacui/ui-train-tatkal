@@ -1,15 +1,42 @@
+/**
+ * @file File Dropzone component
+ * @module components/common/FileDropzone
+ * @description A drag-and-drop file upload area built on react-dropzone.
+ *   Supports single file upload, accept restrictions, and visual feedback
+ *   during drag operations.
+ */
+
+// React hooks
 import { useCallback } from 'react';
+
+// React dropzone for drag-and-drop functionality
 import { useDropzone } from 'react-dropzone';
+
+// Upload icon
 import { UploadCloud } from 'lucide-react';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
 interface FileDropzoneProps {
+  /** Callback invoked when a file is accepted */
   onFile: (file: File) => void;
+  /** Optional MIME type accept configuration (e.g. CSV, XLSX) */
   accept?: Record<string, string[]>;
+  /** Additional CSS class names */
   className?: string;
+  /** Currently selected file (shows its name when set) */
   file?: File | null;
 }
 
+/**
+ * FileDropzone
+ * @description A drag-and-drop area for file uploads. Accepts single files,
+ *   shows the file name after selection, and provides visual feedback
+ *   during drag operations.
+ * @param props FileDropzoneProps
+ * @returns A clickable/droppable file upload zone
+ */
 export function FileDropzone({ onFile, accept, className, file }: FileDropzoneProps) {
   /**
    * onDrop: A callback function to be called when a file is dropped in the input 

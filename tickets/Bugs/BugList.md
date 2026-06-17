@@ -1,0 +1,5 @@
+>> Problem:
+    >> In GoogleAuthButton.tsx Sign in with Google is not rendering on screen paint if code is changed only then it rerenders and cause the button to appear on the screen
+    >> Assumption: It happens due to bad useEffect
+    >> RealReason: initGoogleSignIn() was called inside script.onload, in the same microtask as setScriptLoaded(true). React batches the state update, so the re-render (which mounts <div ref={buttonRef}>) hadn't committed yet. At that point buttonRef.current was null, so initGoogleSignIn() returned early. On a code-change hot reload, the component remounts and the script is already cached, so window.google?.accounts is truthy immediately — the early-return branch (line 64-67) ran instead of the script.onload path, which worked by accident because the ref was available by then.
+    >> Fix: Split into two useEffects — Effect 1 loads the GSI script and increments a scriptLoaded counter on success; Effect 2 watches scriptLoaded and calls initGoogleSignIn() after the DOM has committed (buttonRef is guaranteed to be available). Also changed scriptLoaded from boolean to number to handle Strict Mode double-mount correctly.

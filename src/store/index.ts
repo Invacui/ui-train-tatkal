@@ -1,27 +1,31 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { authReducer } from './auth.slice';
-import { uiReducer } from './ui.slice';
-import { demoReducer } from './demo.slice';
+/**
+ * @file Redux store
+ * @description Configures the Redux store with auth, UI, and booking-draft slices
+ * @module store
+ */
 
+// Redux Toolkit store configuration
+import { configureStore } from '@reduxjs/toolkit';
+// Auth state reducer
+import { authReducer } from './auth.slice';
+// UI state reducer (sidebar, modals)
+import { uiReducer } from './ui.slice';
+// Booking draft state reducer (multi-step booking flow)
+import { bookingDraftReducer } from './booking-draft.slice';
+
+/**
+ * store
+ * @description The application's Redux store, combining auth, ui, and bookingDraft reducers
+ */
 export const store = configureStore({
-  reducer: { 
-    /**
-     * auth: handles authentication state, including user info and access token
-     */
+  reducer: {
     auth: authReducer,
-    
-    /**
-     * ui: manages user interface state, including modal visibility and notifications
-     */
     ui: uiReducer,
-    
-    /**
-     * demo: handles demo-related state, including demo data and loading status
-     */
-    demo: demoReducer 
+    bookingDraft: bookingDraftReducer,
   },
 });
 
-// Infer the `RootState` and `AppDispatch` types from the store itself
+/** Root state type derived from the store */
 export type RootState = ReturnType<typeof store.getState>;
+/** Typed dispatch for the store */
 export type AppDispatch = typeof store.dispatch;

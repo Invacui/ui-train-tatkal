@@ -1,3 +1,9 @@
+/**
+ * @file Google Sign-In type declarations
+ * @description Augments the global Window interface with the Google accounts API for Google Sign-In
+ * @module types
+ */
+
 export {};
 
 declare global {

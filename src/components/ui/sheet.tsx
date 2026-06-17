@@ -1,14 +1,39 @@
+/**
+ * @file Shadcn Sheet component primitives
+ * @module components/ui/sheet
+ * @description Wraps @radix-ui/react-dialog to provide slide-out panel
+ *   (Sheet) components with configurable side (top, bottom, left, right),
+ *   overlay, header, footer, title, and description.
+ */
+
+// React core
 import * as React from 'react';
+
+// Radix UI dialog primitive (used as the sheet foundation)
 import * as SheetPrimitive from '@radix-ui/react-dialog';
+
+// Class-variance-authority for side variant management
 import { cva, type VariantProps } from 'class-variance-authority';
+
+// Close icon
 import { X } from 'lucide-react';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
+/** Sheet — root Radix dialog primitive (slide-out panel) */
 const Sheet = SheetPrimitive.Root;
+/** SheetTrigger — element that opens the sheet */
 const SheetTrigger = SheetPrimitive.Trigger;
+/** SheetClose — element that closes the sheet */
 const SheetClose = SheetPrimitive.Close;
+/** SheetPortal — teleports sheet content in the DOM */
 const SheetPortal = SheetPrimitive.Portal;
 
+/**
+ * SheetOverlay
+ * @description Semi-transparent backdrop rendered behind the sheet panel.
+ */
 const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
@@ -47,6 +72,10 @@ interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
+/**
+ * SheetContent
+ * @description The slide-out panel content, positioned based on the side prop.
+ */
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
@@ -68,11 +97,19 @@ const SheetContent = React.forwardRef<
 ));
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
+/**
+ * SheetHeader
+ * @description Header layout for the sheet, typically containing title and description.
+ */
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn('flex flex-col space-y-2 text-center sm:text-left', className)} {...props} />
 );
 SheetHeader.displayName = 'SheetHeader';
 
+/**
+ * SheetFooter
+ * @description Footer layout for the sheet, typically containing action buttons.
+ */
 const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)}
@@ -81,6 +118,10 @@ const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 );
 SheetFooter.displayName = 'SheetFooter';
 
+/**
+ * SheetTitle
+ * @description Accessible title for the sheet.
+ */
 const SheetTitle = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Title>
@@ -93,6 +134,10 @@ const SheetTitle = React.forwardRef<
 ));
 SheetTitle.displayName = SheetPrimitive.Title.displayName;
 
+/**
+ * SheetDescription
+ * @description Accessible description text for the sheet.
+ */
 const SheetDescription = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>

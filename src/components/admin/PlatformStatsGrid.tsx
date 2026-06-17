@@ -1,13 +1,38 @@
+/**
+ * @file Platform Stats Grid component
+ * @module components/admin/PlatformStatsGrid
+ * @description Displays a responsive grid of platform statistics cards
+ *   (total users, active users, campaigns, leads, tokens used) for the
+ *   admin dashboard. Shows skeleton placeholders while loading.
+ */
+
+// Icons for stat cards
 import { Users, Megaphone, FileText, Coins } from 'lucide-react';
+
+// Shadcn card components
 import { Card, CardContent } from '@/components/ui/card';
+
+// Shadcn skeleton for loading state
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Platform stats type
 import type { PlatformStats } from '@/types/admin.types';
 
 interface PlatformStatsGridProps {
+  /** Platform statistics to display */
   stats?: PlatformStats | undefined;
+  /** When true, renders skeleton loading cards */
   isLoading?: boolean | undefined;
 }
 
+/**
+ * PlatformStatsGrid
+ * @description Renders a grid of stat cards showing platform metrics
+ *   (users, campaigns, leads, tokens). Shows skeleton placeholders
+ *   while loading, and returns null if no stats are available.
+ * @param props PlatformStatsGridProps
+ * @returns A responsive grid of stat cards
+ */
 export function PlatformStatsGrid({ stats, isLoading }: PlatformStatsGridProps) {
   if (isLoading) {
     return (

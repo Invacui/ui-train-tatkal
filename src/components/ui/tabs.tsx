@@ -1,9 +1,26 @@
+/**
+ * @file Shadcn Tabs component primitives
+ * @module components/ui/tabs
+ * @description Wraps @radix-ui/react-tabs to provide accessible tab
+ *   components (Tabs, TabsList, TabsTrigger, TabsContent).
+ */
+
+// React core
 import * as React from 'react';
+
+// Radix UI tabs primitive
 import * as TabsPrimitive from '@radix-ui/react-tabs';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
+/** Tabs — root Radix tabs primitive */
 const Tabs = TabsPrimitive.Root;
 
+/**
+ * TabsList
+ * @description The container for tab trigger elements.
+ */
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
@@ -19,6 +36,10 @@ const TabsList = React.forwardRef<
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
 
+/**
+ * TabsTrigger
+ * @description A clickable tab button that activates its corresponding content panel.
+ */
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
@@ -34,6 +55,10 @@ const TabsTrigger = React.forwardRef<
 ));
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
+/**
+ * TabsContent
+ * @description The content panel revealed when its corresponding tab trigger is active.
+ */
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>

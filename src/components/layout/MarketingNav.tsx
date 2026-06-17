@@ -1,12 +1,40 @@
+/**
+ * @file Marketing Nav component
+ * @module components/layout/MarketingNav
+ * @description Top navigation bar for the public marketing site.
+ *   Shows brand logo, nav links, theme toggle, and auth buttons.
+ *   When logged in, shows user dropdown with dashboard/settings/logout.
+ */
+
+// React hooks
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+
+// Router navigation components
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+
+// Nav icons
+import { Menu, X, Train } from 'lucide-react';
+
+// Shadcn button component
 import { Button } from '@/components/ui/button';
+
+// Application route constants
 import { ROUTES } from '@/constants/routes';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
+
+// Theme toggle button
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+
+// Redux hooks for user state
 import { useAppSelector } from '@/store/hooks';
 import { selectUser } from '@/store/auth.slice';
+
+// Logout mutation hook
+import { useLogout } from '@/hooks/auth/useLogout';
+
+// Shadcn dropdown menu components
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,19 +46,29 @@ import {
 
 const links = [
   { to: ROUTES.home, label: 'Home' },
-  { to: ROUTES.pricing, label: 'Pricing' },
-  { to: ROUTES.about, label: 'About' },
+  { to: ROUTES.searchTrips, label: 'Search Trains' },
 ];
 
+/**
+ * MarketingNav
+ * @description Renders a sticky header navigation bar for the public site.
+ *   Includes brand logo, nav links, theme toggle, and auth buttons.
+ *   When a user is logged in, shows an account dropdown with dashboard
+ *   and logout options. Mobile responsive with hamburger menu.
+ * @returns A sticky header navigation bar
+ */
 export function MarketingNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const user = useAppSelector(selectUser);
+  const { mutate: logout } = useLogout();
+  const navigate = useNavigate();
 
   return (
     <nav className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link to={ROUTES.home} className="font-bold text-primary">
-          LeadFlow
+        <Link to={ROUTES.home} className="flex items-center gap-2 font-bold text-primary">
+          <Train className="h-5 w-5" />
+          <span>TripTatkal</span>
         </Link>
 
         {/* Desktop links */}
@@ -60,24 +98,36 @@ export function MarketingNav() {
                 <Link to={ROUTES.login}>Log in</Link>
               </Button>
               <Button asChild>
-                <Link to={ROUTES.signup}>Get started</Link>
+                <Link to={ROUTES.signup}>Sign up</Link>
               </Button>
             </>
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">Account</Button>
+                <Button variant="outline" className="gap-2">
+                  <span className="hidden md:inline">{user.name}</span>
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-                <DropdownMenuItem>Tokens: {user.tokenBalance}</DropdownMenuItem>
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to={ROUTES.settings}>Account settings</Link>
+                <DropdownMenuItem onClick={() => navigate(ROUTES.settings)}>
+                  Account settings
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to={ROUTES.dashboard}>Go to dashboard</Link>
+                <DropdownMenuItem onClick={() => {
+                  if (user.role === 'admin') navigate(ROUTES.admin.root);
+                  else if (user.role === 'agent') navigate(ROUTES.agent.root);
+                  else navigate(ROUTES.dashboard);
+                }}>
+                  Go to dashboard
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => logout()}>Log out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

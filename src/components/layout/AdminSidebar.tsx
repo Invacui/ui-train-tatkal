@@ -1,21 +1,43 @@
+/**
+ * @file Admin Sidebar component
+ * @module components/layout/AdminSidebar
+ * @description Sidebar navigation for the admin panel with links to
+ *   Overview, Agents, Bookings, Users, and Email Templates.
+ */
+
+// Router navigation
 import { NavLink, useNavigate } from 'react-router-dom';
+
+// Sidebar icons
 import {
   LayoutDashboard,
   Users,
-  FileText,
-  Megaphone,
+  Ticket,
   ShieldCheck,
+  Mail,
+  Train,
 } from 'lucide-react';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
+
+// Application route constants
 import { ROUTES } from '@/constants/routes';
 
 const navItems = [
   { to: ROUTES.admin.root, icon: LayoutDashboard, label: 'Overview' },
+  { to: ROUTES.admin.agents, icon: Users, label: 'Agents' },
+  { to: ROUTES.admin.bookings, icon: Ticket, label: 'Bookings' },
   { to: ROUTES.admin.users, icon: Users, label: 'Users' },
-  { to: ROUTES.admin.leadRequests, icon: FileText, label: 'Lead Requests' },
-  { to: ROUTES.admin.campaigns, icon: Megaphone, label: 'Campaigns' },
+  { to: ROUTES.admin.emailTemplates, icon: Mail, label: 'Email Templates' },
 ];
 
+/**
+ * AdminSidebar
+ * @description Fixed-width sidebar for the admin panel. Shows admin
+ *   branding and navigation links to admin features.
+ * @returns A sidebar navigation element
+ */
 export function AdminSidebar() {
   const navigate = useNavigate();
 
@@ -25,9 +47,10 @@ export function AdminSidebar() {
         <ShieldCheck className="h-5 w-5 text-primary" />
         <button
           onClick={() => navigate(ROUTES.admin.root)}
-          className="font-bold text-primary"
+          className="flex items-center gap-2 font-bold text-primary"
         >
-          Admin
+          <Train className="h-4 w-4" />
+          <span>Admin · TripTatkal</span>
         </button>
       </div>
 

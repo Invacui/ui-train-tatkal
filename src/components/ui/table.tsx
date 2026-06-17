@@ -1,6 +1,21 @@
+/**
+ * @file Shadcn Table component primitives
+ * @module components/ui/table
+ * @description Provides Table, TableHeader, TableBody, TableFooter,
+ *   TableRow, TableHead, TableCell, and TableCaption components with
+ *   consistent border and hover styling.
+ */
+
+// React core
 import * as React from 'react';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
+/**
+ * Table
+ * @description Wraps an HTML table with responsive overflow scrolling.
+ */
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
     <div className="relative w-full overflow-auto">
@@ -14,6 +29,10 @@ const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableE
 );
 Table.displayName = 'Table';
 
+/**
+ * TableHeader
+ * @description The table header section (thead).
+ */
 const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
@@ -22,6 +41,10 @@ const TableHeader = React.forwardRef<
 ));
 TableHeader.displayName = 'TableHeader';
 
+/**
+ * TableBody
+ * @description The table body section (tbody).
+ */
 const TableBody = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
@@ -30,6 +53,10 @@ const TableBody = React.forwardRef<
 ));
 TableBody.displayName = 'TableBody';
 
+/**
+ * TableFooter
+ * @description The table footer section (tfoot) with muted background.
+ */
 const TableFooter = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
@@ -42,6 +69,10 @@ const TableFooter = React.forwardRef<
 ));
 TableFooter.displayName = 'TableFooter';
 
+/**
+ * TableRow
+ * @description A table row with hover and selected-state styling.
+ */
 const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(
   ({ className, ...props }, ref) => (
     <tr
@@ -56,6 +87,10 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
 );
 TableRow.displayName = 'TableRow';
 
+/**
+ * TableHead
+ * @description A header cell (th) with muted foreground styling.
+ */
 const TableHead = React.forwardRef<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement>
@@ -71,6 +106,10 @@ const TableHead = React.forwardRef<
 ));
 TableHead.displayName = 'TableHead';
 
+/**
+ * TableCell
+ * @description A standard data cell (td).
+ */
 const TableCell = React.forwardRef<
   HTMLTableCellElement,
   React.TdHTMLAttributes<HTMLTableCellElement>
@@ -83,6 +122,10 @@ const TableCell = React.forwardRef<
 ));
 TableCell.displayName = 'TableCell';
 
+/**
+ * TableCaption
+ * @description A table caption with muted text styling.
+ */
 const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement>

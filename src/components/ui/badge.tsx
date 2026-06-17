@@ -1,5 +1,17 @@
+/**
+ * @file Shadcn Badge component
+ * @module components/ui/badge
+ * @description Renders a small badge/label with variant styles
+ *   (default, secondary, destructive, outline).
+ */
+
+// React core
 import * as React from 'react';
+
+// Class-variance-authority for variant management
 import { cva, type VariantProps } from 'class-variance-authority';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
@@ -25,6 +37,11 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
+/**
+ * Badge
+ * @description Renders a small badge/label with variant styles. The variant
+ *   prop controls the color scheme (default, secondary, destructive, outline).
+ */
 function Badge({ className, variant, ...props }: BadgeProps) {
   return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
 }

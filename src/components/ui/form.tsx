@@ -1,6 +1,21 @@
+/**
+ * @file Shadcn Form component primitives
+ * @module components/ui/form
+ * @description Provides form field context and components (FormField, FormItem,
+ *   FormLabel, FormControl, FormMessage) that integrate react-hook-form
+ *   with shadcn styling and validation display.
+ */
+
+// React core
 import * as React from 'react';
+
+// React Hook Form for form state management
 import { useFormContext, Controller } from 'react-hook-form';
+
+// Shadcn Label component
 import { Label } from '@/components/ui/label';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
 type FormFieldContextValue = {
@@ -9,6 +24,11 @@ type FormFieldContextValue = {
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
+/**
+ * FormField
+ * @description Provides a named form field context and integrates with
+ *   react-hook-form's Controller for controlled inputs.
+ */
 const FormField = ({
   name,
   render,
@@ -30,6 +50,10 @@ const useFormField = () => {
   return { name: fieldContext.name, ...fieldState };
 };
 
+/**
+ * FormItem
+ * @description Wrapper for a form field's label, control, and message.
+ */
 const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn('space-y-2', className)} {...props} />
@@ -37,6 +61,10 @@ const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 );
 FormItem.displayName = 'FormItem';
 
+/**
+ * FormLabel
+ * @description Label for a form field; turns destructive when the field has an error.
+ */
 const FormLabel = React.forwardRef<
   React.ElementRef<typeof Label>,
   React.ComponentPropsWithoutRef<typeof Label>
@@ -46,11 +74,20 @@ const FormLabel = React.forwardRef<
 });
 FormLabel.displayName = 'FormLabel';
 
+/**
+ * FormControl
+ * @description Wrapper for the actual input element within a form item.
+ */
 const FormControl = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ ...props }, ref) => <div ref={ref} {...props} />,
 );
 FormControl.displayName = 'FormControl';
 
+/**
+ * FormMessage
+ * @description Displays validation error message or children as fallback text.
+ *   Returns null when no error and no children are provided.
+ */
 const FormMessage = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>

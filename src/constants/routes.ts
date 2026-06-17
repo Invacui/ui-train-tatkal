@@ -1,31 +1,78 @@
+/**
+ * @file Route constants
+ * @description Application route path definitions, organised by feature area (auth, agent, admin)
+ * @module constants
+ */
+
+/**
+ * ROUTES
+ * @description Centralised route path definitions. Dynamic segments are expressed as factory functions (e.g. ROUTES.trainDetail('12345')).
+ */
 export const ROUTES = {
+  /** Landing page */
   home: '/',
-  pricing: '/pricing',
-  about: '/about',
+  /** Login page */
   login: '/login',
+  /** Registration page */
   signup: '/signup',
+  /** Forgot password page */
   forgotPassword: '/forgot-password',
+  /** Reset password page */
   resetPassword: '/reset-password',
+  /** Email verification page */
   verifyEmail: '/verify-email',
-  verifyEmailOtp: '/verify-email-otp',
-  selectPlan: '/select-plan',
+  /** User onboarding page */
+  onboarding: '/onboarding',
+  /** Customer dashboard */
   dashboard: '/dashboard',
+  /** Trip search/results page */
+  searchTrips: '/search',
+  /** Trip results for a specific search */
+  tripResults: (searchId: string) => `/trips/results/${searchId}` as const,
+  /** Train detail page */
+  trainDetail: (num: string) => `/trains/${num}` as const,
+  /** Bookings list page */
+  bookings: '/bookings',
+  /** Single booking detail */
+  bookingDetail: (id: string) => `/bookings/${id}` as const,
+  /** Checkout for a trip */
+  checkout: (tripId: string) => `/checkout/${tripId}` as const,
+  /** User settings page */
   settings: '/settings',
-  leads: '/leads',
-  leadUpload: '/leads/upload',
-  lead: (id: string) => `/leads/${id}` as const,
-  templates: '/templates',
-  templateNew: '/templates/new',
-  template: (id: string) => `/templates/${id}` as const,
-  campaigns: '/campaigns',
-  campaign: (id: string) => `/campaigns/${id}` as const,
-  conversations: '/conversations',
-  conversation: (id: string) => `/conversations/${id}` as const,
+  agent: {
+    /** Agent dashboard root */
+    root: '/agent',
+    /** Agent onboarding page */
+    onboard: '/agent/onboard',
+    /** Booking requests for agents */
+    requests: '/agent/requests',
+    /** Agent's bookings list */
+    bookings: '/agent/bookings',
+    /** Single booking detail (agent view) */
+    bookingDetail: (id: string) => `/agent/bookings/${id}` as const,
+    /** Agent stats page */
+    stats: '/agent/stats',
+    /** Agent earnings page */
+    earnings: '/agent/earnings',
+    /** Agent team management */
+    team: '/agent/team',
+  },
   admin: {
+    /** Admin dashboard root */
     root: '/admin',
+    /** Agents list */
+    agents: '/admin/agents',
+    /** Single agent detail */
+    agentDetail: (id: string) => `/admin/agents/${id}` as const,
+    /** Bookings list */
+    bookings: '/admin/bookings',
+    /** Single booking detail (admin view) */
+    bookingDetail: (id: string) => `/admin/bookings/${id}` as const,
+    /** Users list */
     users: '/admin/users',
-    user: (id: string) => `/admin/users/${id}` as const,
-    leadRequests: '/admin/lead-requests',
-    campaigns: '/admin/campaigns',
+    /** Single user detail */
+    userDetail: (id: string) => `/admin/users/${id}` as const,
+    /** Email template editor */
+    emailTemplates: '/admin/email-templates',
   },
 } as const;

@@ -1,27 +1,50 @@
+/**
+ * @file Dashboard Sidebar component
+ * @module components/layout/DashboardSidebar
+ * @description Collapsible sidebar for the authenticated dashboard area.
+ *   Displays navigation links (Overview, Search Trips, My Bookings, Settings)
+ *   and supports collapsing to an icon-only state via a toggle button.
+ */
+
+// Router navigation
 import { NavLink, useNavigate } from 'react-router-dom';
+
+// Sidebar icons
 import {
   LayoutDashboard,
-  Users,
-  FileText,
-  Megaphone,
-  MessageSquare,
+  Search,
+  Ticket,
   Settings,
   ChevronLeft,
+  Train,
 } from 'lucide-react';
+
+// Shadcn button component
 import { Button } from '@/components/ui/button';
+
+// Redux hooks and sidebar state
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { toggleSidebar, selectSidebarOpen } from '@/store/ui.slice';
+
+// Application route constants
 import { ROUTES } from '@/constants/routes';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: ROUTES.dashboard, icon: LayoutDashboard, label: 'Overview' },
-  { to: ROUTES.leads, icon: Users, label: 'Leads' },
-  { to: ROUTES.templates, icon: FileText, label: 'Templates' },
-  { to: ROUTES.campaigns, icon: Megaphone, label: 'Campaigns' },
-  { to: ROUTES.conversations, icon: MessageSquare, label: 'Conversations' },
+  { to: ROUTES.searchTrips, icon: Search, label: 'Search Trips' },
+  { to: ROUTES.bookings, icon: Ticket, label: 'My Bookings' },
 ];
 
+/**
+ * DashboardSidebar
+ * @description A collapsible sidebar for the dashboard area. Shows
+ *   navigation links (Overview, Search Trips, My Bookings) and Settings
+ *   at the bottom. Collapses to icon-only with a chevron toggle.
+ * @returns A sidebar navigation element
+ */
 export function DashboardSidebar() {
   const dispatch = useAppDispatch();
   const isOpen = useAppSelector(selectSidebarOpen);
@@ -37,8 +60,9 @@ export function DashboardSidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4">
         {isOpen && (
-          <button onClick={() => navigate(ROUTES.dashboard)} className="font-bold text-primary">
-            LeadFlow
+          <button onClick={() => navigate(ROUTES.dashboard)} className="flex items-center gap-2 font-bold text-primary">
+            <Train className="h-4 w-4" />
+            <span>TripTatkal</span>
           </button>
         )}
         <Button

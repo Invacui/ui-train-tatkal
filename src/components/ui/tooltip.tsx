@@ -1,11 +1,30 @@
+/**
+ * @file Shadcn Tooltip component primitives
+ * @module components/ui/tooltip
+ * @description Wraps @radix-ui/react-tooltip to provide accessible
+ *   tooltip components (TooltipProvider, Tooltip, TooltipTrigger, TooltipContent).
+ */
+
+// React core
 import * as React from 'react';
+
+// Radix UI tooltip primitive
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+
+// Utility for conditional class names
 import { cn } from '@/lib/utils';
 
+/** TooltipProvider — wraps the app to provide tooltip context */
 const TooltipProvider = TooltipPrimitive.Provider;
+/** Tooltip — root Radix tooltip primitive */
 const Tooltip = TooltipPrimitive.Root;
+/** TooltipTrigger — the element that shows the tooltip on hover */
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
+/**
+ * TooltipContent
+ * @description The tooltip popover content shown on hover.
+ */
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>

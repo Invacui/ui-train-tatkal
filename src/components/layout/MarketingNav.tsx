@@ -47,6 +47,7 @@ import {
 const links = [
   { to: ROUTES.home, label: 'Home' },
   { to: ROUTES.searchTrips, label: 'Search Trains' },
+  { to: ROUTES.pnrCheck, label: 'PNR Status' },
 ];
 
 /**
@@ -94,6 +95,9 @@ export function MarketingNav() {
           <ThemeToggle />
           {!user ? (
             <>
+              <Button variant="ghost" asChild className="hidden md:inline-flex">
+                <Link to={ROUTES.agentLogin}>Agent Portal</Link>
+              </Button>
               <Button variant="ghost" asChild className="hidden md:inline-flex">
                 <Link to={ROUTES.login}>Log in</Link>
               </Button>
@@ -156,6 +160,13 @@ export function MarketingNav() {
               {label}
             </NavLink>
           ))}
+          <Link
+            to={ROUTES.agentLogin}
+            onClick={() => setMobileOpen(false)}
+            className="block py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Agent Portal
+          </Link>
           <Link
             to={ROUTES.login}
             onClick={() => setMobileOpen(false)}

@@ -1,117 +1,389 @@
 /**
  * @file Trip Card component
  * @module components/trips/TripCard
- * @description Displays a train trip summary in a card: train name/number,
- *   departure/arrival times, duration, available classes with fares,
- *   and a "Book Now" button that navigates to the train detail page.
+ * @description Shadcn-styled train card in 2-column grid. Perk icons near
+ *   header, big severity-colored class chips (horizontally scrollable),
+ *   timing pulled to bottom with top-border separator, rating + actions footer.
  */
 
-// Router navigation hook
 import { useNavigate } from 'react-router-dom';
-
-// Icons for trip display
-import { Clock, Train, ArrowRight } from 'lucide-react';
-
-// Shadcn card components
+import { formatDistanceToNow } from 'date-fns';
+import {
+  Train,
+  ArrowRight,
+  Star,
+  Utensils,
+  Wifi,
+  Plug,
+  Bed,
+  Soup,
+  Copy,
+  Check,
+  Info,
+} from 'lucide-react';
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-
-// Shadcn button and badge
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
-// Application route constants
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ROUTES } from '@/constants/routes';
-
-// Utility functions for formatting
-import { formatDuration, formatCurrency } from '@/lib/utils';
-
-// Train type import
-import type { Train as TrainType } from '@/types/trips.types';
+import { formatDuration, formatCurrency, cn } from '@/lib/utils';
+import { PriceBreakdownDialog } from './PriceBreakdownDialog';
+import type { Train as TrainType, CustomClassAvailability } from '@/types/trips.types';
 
 interface TripCardProps {
-  /** Train data to display */
   train: TrainType;
-  /** The date used for the search (passed to booking flow) */
   searchDate: string;
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────
+
+function relativeTimeAgo(timestamp: string | null): string {
+  if (!timestamp) return '';
+  try {
+    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  } catch {
+    return '';
+  }
+}
+
+type Severity = 'confirmed' | 'rac' | 'waitlist' | 'regret' | 'default';
+
+function getSeverity(label: string): Severity {
+  const s = label.toUpperCase();
+  if (/^(CNF|CONFIRM|AVAILABLE|BOOKING CONFIRMED)/.test(s)) return 'confirmed';
+  if (/^RAC\b/.test(s)) return 'rac';
+  if (/^WL\b|^W\/L|WAITLIST/.test(s)) return 'waitlist';
+  if (/CAN\b|CANCELLED|REGRET|REGERT|NOT AVAILABLE|NO BERTH/.test(s)) return 'regret';
+  return 'default';
+}
+
+const severityBorder: Record<Severity, string> = {
+  confirmed: 'border-green-300 dark:border-green-700',
+  rac:       'border-blue-300 dark:border-blue-700',
+  waitlist:  'border-amber-300 dark:border-amber-700',
+  regret:    'border-red-300 dark:border-red-700',
+  default:   'border-border',
+};
+
+const severityBg: Record<Severity, string> = {
+  confirmed: 'bg-green-50 dark:bg-green-950',
+  rac:       'bg-blue-50 dark:bg-blue-950',
+  waitlist:  'bg-amber-50 dark:bg-amber-950',
+  regret:    'bg-red-50 dark:bg-red-950',
+  default:   'bg-card',
+};
+
+const severityDot: Record<Severity, string> = {
+  confirmed: 'bg-green-500',
+  rac:       'bg-blue-500',
+  waitlist:  'bg-amber-500',
+  regret:    'bg-red-500',
+  default:   'bg-muted-foreground',
+};
+
+// ─── Amenity perks ───────────────────────────────────────────────────────
+
+interface Amenity {
+  key: string;
+  icon: typeof Wifi;
+  label: string;
+  show: (train: TrainType) => boolean;
+}
+
+const amenities: Amenity[] = [
+  { key: 'wifi', icon: Wifi, label: 'WiFi onboard', show: (t) => t.has_wifi },
+  { key: 'meal', icon: Soup, label: 'Meal included', show: (t) => t.has_meal },
+  { key: 'pantry', icon: Utensils, label: 'Pantry car', show: (t) => t.has_pantry },
+  { key: 'charging', icon: Plug, label: 'Mobile charging', show: (t) => t.has_charging },
+  { key: 'blanket', icon: Bed, label: 'Blanket / Bedroll', show: (t) => t.has_blanket || t.has_bedroll },
+];
+
+// ─── Component ───────────────────────────────────────────────────────────
+
 /**
  * TripCard
- * @description Renders a card summarizing a train trip: train name, number,
- *   departure/arrival times, duration, Tatkal availability, class badges
- *   with fares, and a "Book Now" button linking to the train detail page.
- * @param props TripCardProps
- * @returns A clickable trip summary card
+ * @description Train listing card in 2-column grid. Layout:
+ *   top: name+number / perk icons / class chips (scrollable)
+ *   bottom (border-separated): timing / footer (rating + actions)
  */
-export function TripCard({ train, searchDate }: TripCardProps) {
+export function TripCard({ train }: TripCardProps) {
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<CustomClassAvailability | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const availableClasses = train.class_availability?.filter((c) => c.is_bookable) ?? [];
+  const activeAmenities = amenities.filter((a) => a.show(train));
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(train.train_identifier_id || train.trainNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* ignore */ }
+  };
 
   return (
-    <Card className="hover:border-primary/50 transition-colors">
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Train info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <Train className="h-5 w-5 text-primary" />
-              <div>
-                <h3 className="font-semibold">{train.trainName}</h3>
-                <p className="text-xs text-muted-foreground">{train.trainNumber}</p>
+    <TooltipProvider>
+      <Card className="group h-full transition-all duration-200 hover:border-primary/30 hover:shadow-md">
+        <CardContent className="flex h-full flex-col gap-3 p-4">
+          {/* ═══════════════════════════════════════════════════════════════
+              TOP SECTION
+          ════════════════════════════════════════════════════════════════ */}
+          <div className="flex flex-col gap-3">
+            {/* ── ROW 1: Train name (left) + number + copy (right) ── */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-sm font-semibold">
+                  {train.train_display_name || train.trainName}
+                </h3>
+                <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium uppercase">
+                    {train.train_category?.replace('_', ' ')}
+                  </span>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <span className="font-mono text-xs text-muted-foreground">
+                  {train.train_identifier_id || train.trainNumber}
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
+                    >
+                      {copied ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="text-xs">{copied ? 'Copied!' : 'Copy train number'}</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-4 text-sm">
-              <div className="text-center">
-                <p className="font-semibold">{train.departureTime}</p>
-                <p className="text-xs text-muted-foreground">{train.sourceStationCode}</p>
-              </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <Clock className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">{formatDuration(train.duration)}</span>
-                <div className="h-px w-12 bg-border" />
-              </div>
-              <div className="text-center">
-                <p className="font-semibold">{train.arrivalTime}</p>
-                <p className="text-xs text-muted-foreground">{train.destinationStationCode}</p>
-              </div>
-            </div>
+            {/* ── ROW 2: Class chips (big square info-grid, scrollable hidden scrollbar) ── */}
+            {availableClasses.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto scrollbar-none" style={{ scrollSnapType: 'x mandatory' }}>
+                {availableClasses.map((cls) => {
+                  const statusLabel = cls.availability_display_label || cls.availability_status_text || '';
+                  const severity = getSeverity(statusLabel);
 
-            {train.hasTatkal && (
-              <Badge variant="secondary" className="mt-2 text-xs">
-                Tatkal Available
-              </Badge>
+                  return (
+                    <button
+                      key={`${cls.travel_class_code}-${cls.quota_code}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedClass(cls);
+                      }}
+                      style={{ scrollSnapAlign: 'start' }}
+                      className={cn(
+                        'flex w-[148px] shrink-0 flex-col rounded-lg border-2 p-2.5 text-xs text-left transition-all',
+                        severityBorder[severity],
+                        severityBg[severity],
+                        selectedClass === cls
+                          ? 'ring-2 ring-primary ring-offset-1'
+                          : 'hover:ring-2 hover:ring-primary/50 hover:ring-offset-1',
+                      )}
+                    >
+                      {/* Chip Row 1: Class + Tatkal tag | Fare */}
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="flex items-center gap-1 font-semibold text-foreground">
+                          {cls.travel_class_code}
+                          {cls.quota_code === 'TQ' && (
+                            <span className="rounded-sm bg-amber-100 px-1 text-[9px] font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                              Tatkal
+                            </span>
+                          )}
+                        </span>
+                        <span className="font-mono text-[11px] font-semibold text-muted-foreground">
+                          {formatCurrency(cls.fare_amount)}
+                        </span>
+                      </div>
+
+                      {/* Chip Row 2: Severity dot + Status label (big, centered) */}
+                      <div className="  flex flex-col items-center justify-center gap-0.5 py-1.5">
+                        <span className="flex items-center gap-1.5 text-sm font-bold leading-tight -ml-4 tracking-tight text-foreground">
+                          <span className={cn('h-2 w-2 rounded-full', severityDot[severity])} />
+                          {statusLabel}
+                        </span>
+                        {/* Chance directly under status */}
+                        {cls.booking_prediction_percentage != null && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {cls.booking_prediction_percentage}% Chance
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Chip Row 3: Age (bottom-right) */}
+                      <div className="flex items-center capitalize border-gray-700 pt-1 border-t-[1px] text center justify-center text-[10px] text-muted-foreground/60">
+                        {relativeTimeAgo(cls.data_timestamp)}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Fallback for no availability data */}
+            {availableClasses.length === 0 && train.classes && train.classes.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {train.classes.slice(0, 4).map((cls) => (
+                  <Badge
+                    key={cls.code}
+                    variant={cls.availableSeats > 0 ? 'default' : 'outline'}
+                    className="text-xs"
+                  >
+                    {cls.code} {cls.availableSeats > 0 ? formatCurrency(cls.fare) : 'NA'}
+                  </Badge>
+                ))}
+                {train.classes.length > 4 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{train.classes.length - 4} more
+                  </Badge>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Classes & Fare */}
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-1">
-              {train.classes.slice(0, 4).map((cls) => (
-                <Badge
-                  key={cls.code}
-                  variant={cls.availableSeats > 0 ? 'default' : 'outline'}
-                  className="text-xs"
-                >
-                  {cls.code} {cls.availableSeats > 0 ? `₹${cls.fare}` : 'NA'}
-                </Badge>
+          {/* ═══════════════════════════════════════════════════════════════
+              BOTTOM SECTION — clearly border-separated
+          ════════════════════════════════════════════════════════════════ */}
+
+          {/* Visible separator */}
+          <hr className="mt-auto border-border" />
+
+          {/* ── ROW 4: Timing (departure → duration → arrival) ── */}
+          <div className="pt-2">
+            <div className="flex items-center gap-2">
+              {/* Departure */}
+              <div className="flex-1 text-center">
+                <p className="text-lg font-bold leading-tight text-foreground">
+                  {train.departure_time_24h || train.departureTime}
+                </p>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  {train.origin_station_code || train.sourceStationCode}
+                </p>
+                <p className="mx-auto max-w-[80px] truncate text-[10px] text-muted-foreground/60">
+                  {train.origin_station_name}
+                </p>
+              </div>
+
+              {/* Duration line */}
+              <div className="flex flex-[2] flex-col items-center gap-0.5 px-2">
+                <span className="text-xs font-semibold uppercase text-muted-foreground">
+                  {train.travel_duration_minutes
+                    ? formatDuration(String(train.travel_duration_minutes))
+                    : formatDuration(train.travel_duration_tt || train.duration || '')}
+                </span>
+                <div className="relative flex h-px w-full items-center">
+                  <div className="h-px flex-1 bg-border" />
+                  <div className="mx-1 h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/50">
+                  {train.total_halts_count > 0 && (
+                    <span>{train.total_halts_count} halt{train.total_halts_count !== 1 ? 's' : ''}</span>
+                  )}
+                  {train.total_distance_km != null && (
+                    <span>~{train.total_distance_km} km</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Arrival */}
+              <div className="flex-1 text-center">
+                <p className="text-lg font-bold leading-tight text-foreground">
+                  {train.arrival_time_24h || train.arrivalTime}
+                </p>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  {train.destination_station_code || train.destinationStationCode}
+                </p>
+                <p className="mx-auto max-w-[80px] truncate text-[10px] text-muted-foreground/60">
+                  {train.destination_station_name}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── ROW 5: Footer — Perk icons + Rating (left) + Actions (right) ── */}
+          <hr className="border-border" />
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-2">
+              {/* Perk icons next to rating */}
+              {activeAmenities.length > 0 && activeAmenities.map((amenity) => (
+                <Tooltip key={amenity.key}>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-muted/50 text-muted-foreground">
+                      <amenity.icon className="h-3 w-3" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="text-xs">{amenity.label}</p>
+                  </TooltipContent>
+                </Tooltip>
               ))}
-              {train.classes.length > 4 && (
-                <Badge variant="outline" className="text-xs">
-                  +{train.classes.length - 4} more
-                </Badge>
+              {train.is_tejas && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950">
+                      <Train className="h-3 w-3" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="text-xs">Tejas Express</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {train.train_rating != null && (
+                <span className="inline-flex items-center gap-1 text-xs text-amber-500">
+                  <Star className="h-3.5 w-3.5 fill-current" />
+                  <span className="font-medium text-foreground">{train.train_rating.toFixed(1)}</span>
+                </span>
               )}
             </div>
-            <Button
-              size="sm"
-              onClick={() => navigate(ROUTES.trainDetail(train.trainNumber))}
-              className="gap-1"
-            >
-              Book Now
-              <ArrowRight className="h-3 w-3" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                disabled={!selectedClass}
+                onClick={() => {
+                  if (selectedClass) setDialogOpen(true);
+                }}
+              >
+                <Info className="mr-1 h-3 w-3" />
+                Details
+              </Button>
+              <Button
+                size="sm"
+                className="h-8 gap-1 text-xs"
+                onClick={() => navigate(ROUTES.trainDetail(train.trainNumber))}
+              >
+                Book
+                <ArrowRight className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Price Breakdown Dialog */}
+      {selectedClass && (
+        <PriceBreakdownDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          cls={selectedClass}
+          trainName={train.train_display_name || train.trainName}
+          trainNumber={train.train_identifier_id || train.trainNumber}
+        />
+      )}
+    </TooltipProvider>
   );
 }

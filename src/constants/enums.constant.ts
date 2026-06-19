@@ -26,3 +26,39 @@ export const PAYMENT_STATUSES = ['PENDING', 'SUCCESS', 'FAILED', 'REFUNDED'] as 
 export const AGENT_TIERS = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'] as const;
 /** Agent account statuses */
 export const AGENT_STATUSES = ['PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED', 'REJECTED'] as const;
+
+/** Train categories */
+export const TRAIN_CATEGORIES = [
+  'MAIL_EXPRESS',
+  'SUPERFAST',
+  'GARIB_RATH',
+  'SHATABDI',
+  'TEJAS',
+  'RAJDHANI',
+  'DURONTO',
+  'JAN_SHATABDI',
+  'PASSENGER',
+  'MEMU',
+  'DMU',
+] as const;
+
+/** Availability calendar states */
+export const AVAILABILITY_STATES = ['Available', 'FillingFast', 'FewSeats', 'Unknown'] as const;
+
+/** Derived PNR journey statuses */
+export const DERIVED_JOURNEY_STATUSES = [
+  'CONFIRMED',
+  'RAC',
+  'WAITING_LIST',
+  'CANCELLED',
+  'PARTIALLY_CONFIRMED',
+  'CHART_NOT_PREPARED',
+] as const;
+
+/** Time range presets for departure time filter */
+export const TIME_RANGES = [
+  { label: 'Morning (06:00–12:00)', value: 'morning' as const },
+  { label: 'Afternoon (12:00–18:00)', value: 'afternoon' as const },
+  { label: 'Evening (18:00–00:00)', value: 'evening' as const },
+  { label: 'Night (00:00–06:00)', value: 'night' as const },
+] as const;

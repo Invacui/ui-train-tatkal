@@ -64,6 +64,54 @@ const config: Config = {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        /* Semantic success/warning colors */
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+        /* Availability calendar states */
+        availability: {
+          available: 'hsl(var(--availability-available))',
+          filling: 'hsl(var(--availability-filling))',
+          few: 'hsl(var(--availability-few))',
+          unknown: 'hsl(var(--availability-unknown))',
+        },
+        /* PNR status colors */
+        pnr: {
+          confirmed: 'hsl(var(--pnr-confirmed))',
+          rac: 'hsl(var(--pnr-rac))',
+          waiting: 'hsl(var(--pnr-waiting))',
+          cancelled: 'hsl(var(--pnr-cancelled))',
+          'chart-not-ready': 'hsl(var(--pnr-chart-not-ready))',
+        },
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { backgroundPosition: '200% 0' },
+          '100%': { backgroundPosition: '-200% 0' },
+        },
+        'slide-in-from-right': {
+          '0%': { transform: 'translateX(100%)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        'fade-in-scale': {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'pulse-availability': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.6' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.5s ease-in-out infinite',
+        'slide-in-from-right': 'slide-in-from-right 0.2s ease-out',
+        'fade-in-scale': 'fade-in-scale 0.15s ease-out',
+        'pulse-availability': 'pulse-availability 2s ease-in-out infinite',
       },
     },
   },

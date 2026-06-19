@@ -1,6 +1,7 @@
 /**
  * @file Application entry point
- * @description Mounts the React application into the DOM, wrapping it with StrictMode and the Providers component
+ * @description Mounts the React application into the DOM, wrapping it with StrictMode,
+ *   the ErrorBoundary (outer catch-all for critical failures), and Providers.
  * @module main
  */
 
@@ -8,6 +9,8 @@
 import { StrictMode } from 'react';
 // React 18 createRoot API
 import { createRoot } from 'react-dom/client';
+// Outer error boundary — catches errors outside React Router's errorElement
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 // Top-level providers (Redux, Router, Theme, etc.)
 import { Providers } from '@/components/common/Providers';
 // Root application component
@@ -17,8 +20,10 @@ import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Providers>
-      <App />
-    </Providers>
+    <ErrorBoundary>
+      <Providers>
+        <App />
+      </Providers>
+    </ErrorBoundary>
   </StrictMode>,
 );

@@ -1,20 +1,19 @@
 /**
- * @file Login page
- * @module routes/auth/Login
- * @description User login page with email/password form and Google OAuth.
- *   On success, redirects based on the user's role.
+ * @file AdminLogin page
+ * @module routes/auth/AdminLogin
+ * @description Admin-specific login page with admin-branded UI.
+ *   Uses the same useLogin hook — role-based redirect sends admins to /admin.
+ *   No signup link since admins are hardcoded in the database.
  */
 
-// Link for navigation to signup and forgot-password routes
+// Link for navigation
 import { Link } from 'react-router-dom';
 
 // React Hook Form for form state management
 import { useForm } from 'react-hook-form';
 
-// UI button component
+// UI components
 import { Button } from '@/components/ui/button';
-
-// UI input component
 import { Input } from '@/components/ui/input';
 
 // Custom hook for login mutation
@@ -23,18 +22,19 @@ import { useLogin } from '@/hooks/auth/useLogin';
 // Validation rules and form value types
 import { validationRules, type LoginFormValues } from '@/lib/validationRules';
 
-// Route constants for navigation links
+// Route constants
 import { ROUTES } from '@/constants/routes';
 
-// Google OAuth login button
-import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
+// Icons
+import { Shield } from 'lucide-react';
 
 /**
- * Login (page component)
- * @description Renders the login page with email/password form and Google OAuth
- *   button. Uses useLogin mutation hook. Redirects based on user role on success.
+ * AdminLogin (page component)
+ * @description Admin-branded login page with "Admin Portal" heading.
+ *   Uses the same useLogin hook which already handles role-based redirect.
+ *   No registration link — admin accounts are created directly in the database.
  */
-export default function Login() {
+export default function AdminLogin() {
   const { mutate, isPending } = useLogin();
   const {
     register,
@@ -44,9 +44,14 @@ export default function Login() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-xl font-semibold">Welcome back</h2>
-        <p className="text-sm text-muted-foreground">Sign in to your account</p>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Shield className="h-5 w-5 text-amber-600" />
+          <h2 className="text-xl font-semibold">Admin Portal</h2>
+        </div>
+        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-200">
+          Admin
+        </span>
       </div>
 
       <form onSubmit={handleSubmit((v) => mutate(v))} className="flex flex-col gap-4">
@@ -83,24 +88,11 @@ export default function Login() {
         </Button>
       </form>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-        <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">or</span></div>
-      </div>
-      <GoogleAuthButton redirectTo={ROUTES.dashboard} />
-
       <p className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{' '}
-        <Link to={ROUTES.signup} className="font-medium text-primary hover:underline">
-          Sign up
+        <Link to={ROUTES.home} className="text-xs hover:underline">
+          ← Back to Home
         </Link>
       </p>
-
-      <div className="flex flex-col gap-1 text-center text-xs text-muted-foreground">
-        <Link to={ROUTES.agentLogin} className="hover:underline">
-          Are you an Agent? Login here
-        </Link>
-      </div>
     </div>
   );
 }

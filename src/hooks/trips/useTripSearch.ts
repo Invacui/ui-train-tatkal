@@ -28,7 +28,7 @@ export function useTripSearch(params: TripSearchParams, enabled = true) {
     queryKey: queryKeys.trips.search(params),
     queryFn: () => tripsService.searchTrains(params),
     select: (res) => res.data.data,
-    enabled: enabled && !!params.source && !!params.destination && !!params.date,
+    enabled: !!(enabled && !!params.source && !!params.destination && !!params.date),
     staleTime: 120_000, // Train data changes infrequently
   });
 }

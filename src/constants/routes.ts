@@ -39,6 +39,14 @@ export const ROUTES = {
   checkout: (tripId: string) => `/checkout/${tripId}` as const,
   /** User settings page */
   settings: '/settings',
+  /** Agent login page */
+  agentLogin: '/agent/login',
+  /** Agent signup page */
+  agentSignup: '/agent/signup',
+  /** Admin login page */
+  adminLogin: '/admin/login',
+  /** PNR status check page */
+  pnrCheck: '/pnr-status',
   agent: {
     /** Agent dashboard root */
     root: '/agent',

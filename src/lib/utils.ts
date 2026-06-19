@@ -91,7 +91,7 @@ export function formatDuration(duration: string): string {
  * @returns Formatted currency string (e.g. "₹ 1,234")
  */
 export function formatCurrency(amount: number): string {
-  return `₹ ${amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return `Rs ${amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 /**
@@ -208,4 +208,111 @@ export function getStatusLabel(status: string): string {
  */
 export function formatSeatLabel(coach: string, seatNumber: string): string {
   return `${coach}-${seatNumber}`;
+}
+
+/**
+ * formatDateForApi
+ * @description Converts a date to DD-MM-YYYY format required by the availability calendar API.
+ * Accepts a Date object or an ISO date string (YYYY-MM-DD).
+ * @param date - Date object or ISO string (YYYY-MM-DD)
+ * @returns Date string in DD-MM-YYYY format
+ */
+export function formatDateForApi(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+/**
+ * getAvailabilityColor
+ * @description Maps an availability state to a Tailwind CSS color class for visual indicators.
+ * @param state - Availability state string (Available, FillingFast, FewSeats, Unknown)
+ * @returns Tailwind color class string with background, text, and border colors
+ */
+export function getAvailabilityColor(state: string): string {
+  const colors: Record<string, string> = {
+    Available: 'bg-availability-available text-white border-availability-available',
+    FillingFast: 'bg-availability-filling text-white border-availability-filling',
+    FewSeats: 'bg-availability-few text-white border-availability-few',
+    Unknown: 'bg-availability-unknown text-white border-availability-unknown',
+  };
+  return colors[state] ?? 'bg-muted text-muted-foreground border-border';
+}
+
+/**
+ * getAvailabilityLabel
+ * @description Maps an availability state to a human-readable label.
+ * @param state - Availability state string
+ * @returns Human-readable label
+ */
+export function getAvailabilityLabel(state: string): string {
+  const labels: Record<string, string> = {
+    Available: 'Available',
+    FillingFast: 'Filling Fast',
+    FewSeats: 'Few Seats',
+    Unknown: 'Unknown',
+  };
+  return labels[state] ?? state;
+}
+
+/**
+ * getAvailabilityTextColor
+ * @description Maps an availability state to a Tailwind text color class.
+ * @param state - Availability state string
+ * @returns Tailwind text color class
+ */
+export function getAvailabilityTextColor(state: string): string {
+  const colors: Record<string, string> = {
+    Available: 'text-green-600 dark:text-green-400',
+    FillingFast: 'text-orange-600 dark:text-orange-400',
+    FewSeats: 'text-red-600 dark:text-red-400',
+    Unknown: 'text-muted-foreground',
+  };
+  return colors[state] ?? 'text-muted-foreground';
+}
+
+/**
+ * getAvailabilityDotColor
+ * @description Maps an availability state to a Tailwind background color class for small dot indicators.
+ * @param state - Availability state string
+ * @returns Tailwind background color class
+ */
+export function getAvailabilityDotColor(state: string): string {
+  const colors: Record<string, string> = {
+    Available: 'bg-availability-available',
+    FillingFast: 'bg-availability-filling',
+    FewSeats: 'bg-availability-few',
+    Unknown: 'bg-availability-unknown',
+  };
+  return colors[state] ?? 'bg-muted-foreground';
+}
+
+/**
+ * getDayName
+ * @description Returns the abbreviated day name (Mon, Tue, etc.) for a date string.
+ * @param dateStr - Date string in DD-MM-YYYY or YYYY-MM-DD format
+ * @returns Abbreviated day name (e.g. "Mon")
+ */
+export function getDayName(dateStr: string): string {
+  const parts = dateStr.includes('-') ? dateStr.split('-') : [];
+  // DD-MM-YYYY or YYYY-MM-DD
+  const d = parts[2]?.length === 4
+    ? new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]))
+    : new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  return format(d, 'EEE');
+}
+
+/**
+ * formatDisplayDate
+ * @description Converts a DD-MM-YYYY date string to a human-readable format (e.g. "Mon, 15 Jan").
+ * @param dateStr - Date string in DD-MM-YYYY format
+ * @returns Formatted date string (e.g. "Mon, 15 Jan")
+ */
+export function formatDisplayDate(dateStr: string): string {
+  if (!dateStr || !dateStr.includes('-')) return dateStr;
+  const [day, month, year] = dateStr.split('-');
+  const d = new Date(Number(year), Number(month) - 1, Number(day));
+  return format(d, 'EEE, d MMM');
 }

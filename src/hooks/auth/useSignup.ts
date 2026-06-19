@@ -1,6 +1,7 @@
 /**
  * @file useSignup.ts
- * @description React Query mutation hook for registering a new user, dispatching auth state to Redux, and navigating to the dashboard.
+ * @description React Query mutation hook for registering a new user, dispatching auth state to Redux,
+ *   and performing role-based navigation.
  * @module hooks/auth/useSignup
  */
 
@@ -30,7 +31,10 @@ import type { SignupDto } from '@/types/auth.types';
 
 /**
  * useSignup
- * @description Registers a new user with the provided signup data. On success, dispatches the user and tokens to Redux, shows a welcome toast, and navigates to the dashboard. On failure, displays an error toast with the server message or a fallback message.
+ * @description Registers a new user with the provided signup data. On success, dispatches the user
+ *   and tokens to Redux, shows a welcome toast, and redirects based on the user's role
+ *   (admin, agent, or regular user). On failure, displays an error toast with the server message
+ *   or a fallback message.
  * @returns A React Query mutation object for triggering the signup mutation.
  */
 export function useSignup() {
@@ -43,7 +47,11 @@ export function useSignup() {
       const { user, accessToken, refreshToken } = res.data.data;
       dispatch(setAuth({ user, accessToken, refreshToken }));
       toast.success('Account created! Welcome to TripTatkal.');
-      navigate(ROUTES.dashboard);
+
+      // Role-based redirect (same as useLogin)
+      if (user.role === 'admin') navigate(ROUTES.admin.root);
+      else if (user.role === 'agent') navigate(ROUTES.agent.root);
+      else navigate(ROUTES.dashboard);
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || 'Registration failed';

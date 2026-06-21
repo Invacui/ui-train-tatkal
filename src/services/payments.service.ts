@@ -11,7 +11,7 @@ import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types/api.types';
 
 // Payment data types
-import type { PaymentInfo, InitiatePaymentDto } from '@/types/payments.types';
+import type { PaymentInfo, InitiatePaymentDto, RazorpayInitiateDto, RazorpayInitiateResponse, RazorpayVerifyDto, RazorpayVerifyResponse } from '@/types/payments.types';
 
 /**
  * paymentsService
@@ -36,4 +36,24 @@ export const paymentsService = {
    */
   verifyPayment: (paymentId: string) =>
     api.get<ApiResponse<PaymentInfo>>(`/payments/${paymentId}/verify`),
+
+  // --- Razorpay methods ---
+
+  /**
+   * initiateRazorpayOrder
+   * @description Creates a Razorpay order for a booking, returning order details for frontend checkout.
+   * @param {RazorpayInitiateDto} dto - Initiate payload with bookingId and amount.
+   * @returns A promise resolving to the Razorpay order details including order_id and key_id.
+   */
+  initiateRazorpayOrder: (dto: RazorpayInitiateDto) =>
+    api.post<ApiResponse<RazorpayInitiateResponse>>('/payments/razorpay/initiate', dto),
+
+  /**
+   * verifyRazorpayPayment
+   * @description Verifies a Razorpay payment signature after successful checkout.
+   * @param {RazorpayVerifyDto} dto - Verification payload with payment details.
+   * @returns A promise resolving to the booking status after verification.
+   */
+  verifyRazorpayPayment: (dto: RazorpayVerifyDto) =>
+    api.post<ApiResponse<RazorpayVerifyResponse>>('/payments/razorpay/verify', dto),
 };

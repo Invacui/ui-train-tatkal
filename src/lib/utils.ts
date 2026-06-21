@@ -28,8 +28,11 @@ export function cn(...inputs: ClassValue[]) {
  * @param fmt - date-fns format string (default: 'MMM d, yyyy')
  * @returns Formatted date string
  */
-export function formatDate(date: string | Date, fmt = 'MMM d, yyyy'): string {
-  return format(new Date(date), fmt);
+export function formatDate(date: string | Date | null | undefined, fmt = 'MMM d, yyyy'): string {
+  if (!date) return '—';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '—';
+  return format(d, fmt);
 }
 
 /**
@@ -39,8 +42,11 @@ export function formatDate(date: string | Date, fmt = 'MMM d, yyyy'): string {
  * @param fmt - date-fns format string (default: 'MMM d, yyyy, h:mm a')
  * @returns Formatted date-time string
  */
-export function formatDateTime(date: string | Date, fmt = 'MMM d, yyyy, h:mm a'): string {
-  return format(new Date(date), fmt);
+export function formatDateTime(date: string | Date | null | undefined, fmt = 'MMM d, yyyy, h:mm a'): string {
+  if (!date) return '—';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '—';
+  return format(d, fmt);
 }
 
 /**
@@ -141,7 +147,10 @@ export function getBookingStatusVariant(status: string): 'default' | 'secondary'
     waiting_list: 'outline',
     failed: 'destructive',
     refunded: 'destructive',
+    refund_initiated: 'secondary',
     cancelled: 'destructive',
+    cancelled_with_refund: 'destructive',
+    cancellation_failed: 'destructive',
   };
   return variants[status] ?? 'secondary';
 }
@@ -166,7 +175,10 @@ export function getStatusColor(status: string): string {
     waiting_list: 'text-orange-600 bg-orange-50 border-orange-200',
     failed: 'text-red-600 bg-red-50 border-red-200',
     refunded: 'text-red-600 bg-red-50 border-red-200',
+    refund_initiated: 'text-yellow-600 bg-yellow-50 border-yellow-200',
     cancelled: 'text-red-600 bg-red-50 border-red-200',
+    cancelled_with_refund: 'text-red-600 bg-red-50 border-red-200',
+    cancellation_failed: 'text-red-600 bg-red-50 border-red-200',
     active: 'text-green-600 bg-green-50 border-green-200',
     suspended: 'text-red-600 bg-red-50 border-red-200',
     pending: 'text-yellow-600 bg-yellow-50 border-yellow-200',
@@ -192,9 +204,12 @@ export function getStatusLabel(status: string): string {
     waiting_list: 'Waiting List',
     failed: 'Failed',
     refunded: 'Refunded',
+    refund_initiated: 'Refund Initiated',
     delivered: 'Delivered',
     completed: 'Completed',
     cancelled: 'Cancelled',
+    cancelled_with_refund: 'Cancelled (Refunded)',
+    cancellation_failed: 'Cancellation Failed',
   };
   return labels[status] ?? status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }

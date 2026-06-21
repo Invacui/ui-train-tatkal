@@ -70,6 +70,7 @@ const AdminBookingDetail = lazy(() => import('@/routes/admin/AdminBookingDetail'
 const AdminUsers = lazy(() => import('@/routes/admin/AdminUsers'));
 const AdminUserDetail = lazy(() => import('@/routes/admin/AdminUserDetail'));
 const AdminEmailTemplates = lazy(() => import('@/routes/admin/AdminEmailTemplates'));
+const AdminPricingConfig = lazy(() => import('@/routes/admin/AdminPricingConfigPage'));
 
 // ---- Lazy loaded utility pages ----
 const NotFound = lazy(() => import('@/routes/NotFound'));
@@ -141,7 +142,7 @@ const router = createBrowserRouter([
           { path: '/trains/:trainNumber', element: <S><TripDetail /></S> },
           { path: ROUTES.bookings, element: <S><BookingsList /></S> },
           { path: '/bookings/:id', element: <S><BookingDetail /></S> },
-          { path: '/checkout/:tripId', element: <S><Checkout /></S> },
+          { path: '/booking/:trainNumber', element: <S><Checkout /></S> },
           { path: ROUTES.settings, element: <S><Settings /></S> },
         ],
       },
@@ -173,6 +174,7 @@ const router = createBrowserRouter([
           { path: ROUTES.admin.users, element: <S><AdminUsers /></S> },
           { path: '/admin/users/:id', element: <S><AdminUserDetail /></S> },
           { path: ROUTES.admin.emailTemplates, element: <S><AdminEmailTemplates /></S> },
+          { path: ROUTES.admin.pricingConfig, element: <S><AdminPricingConfig /></S> },
         ],
       },
 

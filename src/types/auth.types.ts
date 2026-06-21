@@ -21,6 +21,14 @@ export interface User {
   emailVerified: boolean;
   authProvider: AuthProvider;
   onboardingCompleted: boolean;
+  /** Structured address with optional lat/lon */
+  address?: UserAddress;
+  /** Aadhar identification number */
+  aadharId?: string;
+  /** URL to uploaded Aadhar document (PDF) */
+  aadharDocUrl?: string;
+  /** Family members linked to this account (max 4) */
+  familyMembers?: FamilyMember[];
   createdAt: string;
   updatedAt: string;
 }
@@ -84,6 +92,52 @@ export interface UpdateMeDto {
   name?: string;
   email?: string;
   phone?: string;
+}
+
+// --- New types for user address, family members, and aadhar ---
+
+/** Structured address with optional geolocation */
+export interface UserAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  lat?: number;
+  lon?: number;
+}
+
+/** A family member of the primary user (max 4 per account) */
+export interface FamilyMember {
+  id: string;
+  firstName: string;
+  lastName?: string;
+  age: number;
+  gender: Gender;
+  relation: 'spouse' | 'child' | 'parent' | 'sibling' | 'other';
+}
+
+/** DTO for updating user address */
+export interface UpdateAddressDto {
+  address: UserAddress;
+}
+
+/** DTO for adding a new family member */
+export interface AddFamilyMemberDto {
+  firstName: string;
+  lastName?: string;
+  age: number;
+  gender: Gender;
+  relation: FamilyMember['relation'];
+}
+
+/** DTO for updating an existing family member */
+export interface UpdateFamilyMemberDto extends AddFamilyMemberDto {}
+
+/** DTO for updating aadhar ID and document URL */
+export interface UpdateAadharDto {
+  aadharId: string;
+  aadharDocUrl: string;
 }
 
 // JWT access and refresh token pair

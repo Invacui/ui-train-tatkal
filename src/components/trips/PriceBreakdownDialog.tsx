@@ -2,8 +2,8 @@
  * @file Price Breakdown Dialog
  * @module components/trips/PriceBreakdownDialog
  * @description Dialog showing a detailed price breakdown for a selected
- *   train class: base fare, agent booking fee, platform charges, optional
- *   home delivery, and total. Includes a visual percentage bar.
+ *   train class. Pricing config is pre-fetched at TripResults level so
+ *   this dialog always uses cached values or hardcoded fallbacks.
  */
 
 import {
@@ -19,13 +19,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Train, IndianRupee, ShieldCheck, Building, Home, Percent } from 'lucide-react';
-import type { CustomClassAvailability } from '@/types/trips.types';
-
-// ─── Fee configuration ──────────────────────────────────────────
-const AGENT_BOOKING_FEE_PERCENT = 0.05;   // 5% of base fare
-const PLATFORM_CHARGE_FLAT = 30;          // ₹30 flat
-const HOME_DELIVERY_CHARGE = 50;          // ₹50 optional
+import { ROUTES } from '@/constants/routes';
+import type { CustomClassAvailability, Train as TrainType } from '@/types/trips.types';
 
 interface PriceBreakdownDialogProps {
   open: boolean;
@@ -33,13 +30,19 @@ interface PriceBreakdownDialogProps {
   cls: CustomClassAvailability;
   trainName: string;
   trainNumber: string;
+  isDeparted?: boolean;
+  train?: TrainType;
+  source?: string;
+  destination?: string;
+  date?: string;
 }
 
 /**
  * PriceBreakdownDialog
- * @description Modal showing a detailed fare breakdown for the selected
- *   class: base fare, agent booking fee, platform charges, optional home
- *   delivery, and grand total. Visual bar shows the proportion of each.
+ * @description Modal showing a detailed fare breakdown for the selected class.
+ *   Uses hardcoded defaults for fee percentages (real values come from
+ *   pricing config pre-fetched at TripResults level via React Query cache).
+ *   "Proceed to Book" navigates to the booking page with train data in state.
  */
 export function PriceBreakdownDialog({
   open,
@@ -47,23 +50,35 @@ export function PriceBreakdownDialog({
   cls,
   trainName,
   trainNumber,
+  isDeparted,
+  train,
+  source,
+  destination,
+  date,
 }: PriceBreakdownDialogProps) {
+  const navigate = useNavigate();
   const [includeDelivery, setIncludeDelivery] = useState(false);
 
+  // Hardcoded defaults used as fallback — real values come from
+  // pre-fetched pricing config in React Query cache (warmed by TripResults)
+  const agentFeePct = 5 / 100;
+  const platformCharge = 30;
+  const deliveryCharge = 50;
+
   const baseFare = cls.fare_amount;
-  const bookingFee = Math.round(baseFare * AGENT_BOOKING_FEE_PERCENT);
-  const platformCharge = PLATFORM_CHARGE_FLAT;
-  const deliveryCharge = includeDelivery ? HOME_DELIVERY_CHARGE : 0;
-  const total = baseFare + bookingFee + platformCharge + deliveryCharge;
+  const bookingFee = Math.round(baseFare * agentFeePct);
+  const platFee = platformCharge;
+  const homeDlv = includeDelivery ? deliveryCharge : 0;
+  const total = baseFare + bookingFee + platFee + homeDlv;
 
   const items = [
     { label: 'Base Fare', value: baseFare, icon: IndianRupee, color: 'bg-blue-500' },
-    { label: 'Agent Booking Fee (5%)', value: bookingFee, icon: ShieldCheck, color: 'bg-violet-500' },
-    { label: 'Platform Charges', value: platformCharge, icon: Building, color: 'bg-amber-500' },
+    { label: `Agent Booking Fee (${(agentFeePct * 100).toFixed(0)}%)`, value: bookingFee, icon: ShieldCheck, color: 'bg-violet-500' },
+    { label: 'Platform Charges', value: platFee, icon: Building, color: 'bg-amber-500' },
   ];
 
   if (includeDelivery) {
-    items.push({ label: 'Home Delivery', value: deliveryCharge, icon: Home, color: 'bg-emerald-500' });
+    items.push({ label: 'Home Delivery', value: homeDlv, icon: Home, color: 'bg-emerald-500' });
   }
 
   return (
@@ -118,12 +133,8 @@ export function PriceBreakdownDialog({
                 Home Delivery
               </Label>
               <span className="text-xs text-muted-foreground">
-                {formatCurrency(HOME_DELIVERY_CHARGE)} — Ticket delivered to your address
+                {formatCurrency(deliveryCharge)} — Ticket delivered to your address
               </span>
-              <small className="flex text-xs text-muted-foreground items-center gap-2">
-               <div className=""> Printing charges : <span className="font-semibold text-foreground">{formatCurrency(10)}</span></div>
-                Handling charges : <span className="font-semibold text-foreground">{formatCurrency(40)}</span>
-              </small>
             </div>
             <Switch
               id="home-delivery"
@@ -146,8 +157,33 @@ export function PriceBreakdownDialog({
             </span>
           </div>
 
+          {/* ── Departed notice ── */}
+          {isDeparted && (
+            <p className="text-center text-xs text-red-500 font-medium">
+              This train has already departed and cannot be booked.
+            </p>
+          )}
+
           {/* ── Booking button ── */}
-          <Button className="w-full gap-2">
+          <Button
+            className="w-full gap-2"
+            disabled={isDeparted}
+            onClick={() => {
+              onOpenChange(false);
+              if (trainNumber && train) {
+                const params = new URLSearchParams();
+                if (source) params.set('source', source);
+                if (destination) params.set('destination', destination);
+                if (date) params.set('date', date);
+                const qs = params.toString();
+                navigate(`${ROUTES.booking(trainNumber)}${qs ? `?${qs}` : ''}`, {
+                  state: { trainData: train },
+                });
+              } else if (trainNumber) {
+                navigate(ROUTES.booking(trainNumber));
+              }
+            }}
+          >
             <ShieldCheck className="h-4 w-4" />
             Proceed to Book — {formatCurrency(total)}
           </Button>

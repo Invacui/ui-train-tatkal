@@ -4,7 +4,7 @@
  * @module types
  */
 
-// User-facing notification
+// User-facing notification (normalised from API shape)
 export interface Notification {
   id: string;
   userId: string;
@@ -13,10 +13,6 @@ export interface Notification {
   type: string;
   isRead: boolean;
   createdAt: string;
-}
-
-// Wrapper for notification list API response
-export interface NotificationListResponse {
-  success: boolean;
-  data: Notification[];
+  /** Arbitrary payload from the backend (e.g. { bookingId, ... }) */
+  data?: Record<string, any>;
 }

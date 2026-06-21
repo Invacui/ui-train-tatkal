@@ -7,6 +7,7 @@
 import type { TripSearchParams } from '@/types/trips.types';
 import type { PaginationParams } from '@/types/api.types';
 import type { CalendarSearchParams } from '@/types/calendar.types';
+import type { NearbyAgentQuery } from '@/types/geolocation.types';
 
 /**
  * queryKeys
@@ -37,6 +38,7 @@ export const queryKeys = {
     booking: (id: string) => ['agents', 'bookings', id] as const,
     stats: () => ['agents', 'stats'] as const,
     earnings: () => ['agents', 'earnings'] as const,
+    nearby: (params: NearbyAgentQuery) => ['agents', 'nearby', params] as const,
   },
   admin: {
     dashboard: () => ['admin', 'dashboard'] as const,
@@ -52,5 +54,8 @@ export const queryKeys = {
   },
   pnr: {
     status: (pnr: string) => ['pnr', 'status', pnr] as const,
+  },
+  pricing: {
+    config: () => ['pricing', 'config'] as const,
   },
 } as const;

@@ -195,9 +195,9 @@ export interface PassengerDetailsFormValues {
   name: string;
   age: number;
   gender: 'male' | 'female' | 'other';
-  idCardType: string;
-  idCardNumber: string;
   berthPreference?: string;
+  idType?: string;
+  idNumber?: string;
 }
 
 /** Payment form field values */

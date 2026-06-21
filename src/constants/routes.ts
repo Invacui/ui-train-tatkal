@@ -35,8 +35,8 @@ export const ROUTES = {
   bookings: '/bookings',
   /** Single booking detail */
   bookingDetail: (id: string) => `/bookings/${id}` as const,
-  /** Checkout for a trip */
-  checkout: (tripId: string) => `/checkout/${tripId}` as const,
+  /** Checkout / booking page for a train */
+  booking: (trainNumber: string) => `/booking/${trainNumber}` as const,
   /** User settings page */
   settings: '/settings',
   /** Agent login page */
@@ -82,5 +82,7 @@ export const ROUTES = {
     userDetail: (id: string) => `/admin/users/${id}` as const,
     /** Email template editor */
     emailTemplates: '/admin/email-templates',
+    /** Pricing configuration editor */
+    pricingConfig: '/admin/pricing-config',
   },
 } as const;

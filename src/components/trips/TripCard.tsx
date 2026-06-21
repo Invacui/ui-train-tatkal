@@ -7,7 +7,7 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isBefore, parse } from 'date-fns';
 import {
   Train,
   ArrowRight,
@@ -21,19 +21,21 @@ import {
   Check,
   Info,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ROUTES } from '@/constants/routes';
+import type { Train as TrainType, CustomClassAvailability } from '@/types/trips.types';
 import { formatDuration, formatCurrency, cn } from '@/lib/utils';
 import { PriceBreakdownDialog } from './PriceBreakdownDialog';
-import type { Train as TrainType, CustomClassAvailability } from '@/types/trips.types';
 
 interface TripCardProps {
   train: TrainType;
   searchDate: string;
+  source?: string;
+  destination?: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -107,13 +109,30 @@ const amenities: Amenity[] = [
  *   top: name+number / perk icons / class chips (scrollable)
  *   bottom (border-separated): timing / footer (rating + actions)
  */
-export function TripCard({ train }: TripCardProps) {
+export function TripCard({ train, searchDate, source, destination }: TripCardProps) {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [selectedClass, setSelectedClass] = useState<CustomClassAvailability | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const availableClasses = train.class_availability?.filter((c) => c.is_bookable) ?? [];
   const activeAmenities = amenities.filter((a) => a.show(train));
+
+  /** Check if the train has already departed for the given search date */
+  const isDeparted = useMemo(() => {
+    if (!searchDate) return false;
+    try {
+      // Combine search date (YYYY-MM-DD) with departure time (HH:mm)
+      const depTime = train.departure_time_24h || train.departureTime;
+      if (!depTime) return false;
+      const departure = parse(`${searchDate} ${depTime}`, 'yyyy-MM-dd HH:mm', new Date());
+      return isBefore(departure, new Date());
+    } catch {
+      return false;
+    }
+  }, [searchDate, train.departure_time_24h, train.departureTime]);
+
+  /** Check if there are any bookable classes */
+  const hasBookableClasses = availableClasses.length > 0;
 
   const handleCopy = async () => {
     try {
@@ -131,6 +150,12 @@ export function TripCard({ train }: TripCardProps) {
               TOP SECTION
           ════════════════════════════════════════════════════════════════ */}
           <div className="flex flex-col gap-3">
+            {/* ── Departed banner ── */}
+            {isDeparted && (
+              <div className="rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 text-center">
+                This train has already departed
+              </div>
+            )}
             {/* ── ROW 1: Train name (left) + number + copy (right) ── */}
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
@@ -353,7 +378,7 @@ export function TripCard({ train }: TripCardProps) {
                 variant="ghost"
                 size="sm"
                 className="h-8 text-xs"
-                disabled={!selectedClass}
+                disabled={!selectedClass || isDeparted}
                 onClick={() => {
                   if (selectedClass) setDialogOpen(true);
                 }}
@@ -364,7 +389,20 @@ export function TripCard({ train }: TripCardProps) {
               <Button
                 size="sm"
                 className="h-8 gap-1 text-xs"
-                onClick={() => navigate(ROUTES.trainDetail(train.trainNumber))}
+                disabled={!hasBookableClasses || isDeparted}
+                onClick={() => {
+                  const id = train.train_identifier_id || train.trainNumber;
+                  if (id) {
+                    const params = new URLSearchParams();
+                    if (source) params.set('source', source);
+                    if (destination) params.set('destination', destination);
+                    if (searchDate) params.set('date', searchDate);
+                    const qs = params.toString();
+                    navigate(`${ROUTES.booking(id)}${qs ? `?${qs}` : ''}`, {
+                      state: { trainData: train },
+                    });
+                  }
+                }}
               >
                 Book
                 <ArrowRight className="h-3 w-3" />
@@ -382,6 +420,11 @@ export function TripCard({ train }: TripCardProps) {
           cls={selectedClass}
           trainName={train.train_display_name || train.trainName}
           trainNumber={train.train_identifier_id || train.trainNumber}
+          isDeparted={isDeparted}
+          train={train}
+          source={source}
+          destination={destination}
+          date={searchDate}
         />
       )}
     </TooltipProvider>

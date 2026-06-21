@@ -21,6 +21,14 @@ import type {
   TokenRefreshResponse,
 } from '@/types/auth.types';
 
+// Profile-related DTOs
+import type {
+  UserAddress,
+  AddFamilyMemberDto,
+  UpdateFamilyMemberDto,
+  UpdateAadharDto,
+} from '@/types/auth.types';
+
 // Generic API response wrapper
 import type { ApiResponse } from '@/types/api.types';
 
@@ -83,4 +91,52 @@ export const authService = {
   refreshToken: (refreshToken: string) =>
     api.post<TokenRefreshResponse>('/auth/refresh-token', { refreshToken }),
   updateMe: (dto: UpdateMeDto) => api.patch<ApiResponse<User>>('/auth/me', dto),
+
+  // --- Profile enhancement methods ---
+
+  /**
+   * updateAddress
+   * @description Updates the authenticated user's address with geolocation.
+   * @param {UserAddress} address - Structured address object.
+   * @returns A promise resolving to the updated user profile.
+   */
+  updateAddress: (address: UserAddress) =>
+    api.patch<ApiResponse<User>>('/auth/me/address', { address }),
+
+  /**
+   * addFamilyMember
+   * @description Adds a new family member to the user's account (max 4).
+   * @param {AddFamilyMemberDto} dto - Family member details.
+   * @returns A promise resolving to the created family member.
+   */
+  addFamilyMember: (dto: AddFamilyMemberDto) =>
+    api.post('/auth/me/family-members', dto),
+
+  /**
+   * updateFamilyMember
+   * @description Updates an existing family member's details.
+   * @param {string} id - The family member's ID.
+   * @param {UpdateFamilyMemberDto} dto - Updated family member details.
+   * @returns A promise resolving to the updated family member.
+   */
+  updateFamilyMember: (id: string, dto: UpdateFamilyMemberDto) =>
+    api.patch(`/auth/me/family-members/${id}`, dto),
+
+  /**
+   * deleteFamilyMember
+   * @description Removes a family member from the user's account.
+   * @param {string} id - The family member's ID to remove.
+   * @returns A promise resolving to the deletion confirmation.
+   */
+  deleteFamilyMember: (id: string) =>
+    api.delete(`/auth/me/family-members/${id}`),
+
+  /**
+   * updateAadhar
+   * @description Updates the user's Aadhar ID and document URL.
+   * @param {UpdateAadharDto} dto - Object with aadharId and aadharDocUrl.
+   * @returns A promise resolving to the updated user profile.
+   */
+  updateAadhar: (dto: UpdateAadharDto) =>
+    api.patch<ApiResponse<User>>('/auth/me/aadhar', dto),
 };

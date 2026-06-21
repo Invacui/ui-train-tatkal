@@ -16,20 +16,34 @@ import { bookingsService } from '@/services/bookings.service';
 // Query key factory
 import { queryKeys } from '@/lib/queryKeys';
 
+// Cancel booking DTO type
+import type { CancelBookingDto } from '@/types/bookings.types';
+
+interface CancelVariables {
+  bookingId: string;
+  dto: CancelBookingDto;
+}
+
 /**
  * useCancelBooking
- * @description Cancels a booking by its ID. On success, invalidates the booking detail and bookings list caches so the UI reflects the updated status, and shows a toast with the refund amount. On failure, shows an error toast.
+ * @description Cancels a booking by its ID with a reason. On success, invalidates caches
+ *   and shows a toast with the refund amount (if any). On failure, shows an error toast.
  * @returns A React Query mutation object for triggering the cancel-booking mutation.
  */
 export function useCancelBooking() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => bookingsService.cancelBooking(id),
-    onSuccess: (res, id) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.bookings.detail(id) });
+    mutationFn: ({ bookingId, dto }: CancelVariables) =>
+      bookingsService.cancelBooking(bookingId, dto),
+    onSuccess: (res, { bookingId }) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.bookings.detail(bookingId) });
       void qc.invalidateQueries({ queryKey: queryKeys.bookings.list() });
-      toast.success(`Booking cancelled. Refund: ₹${res.data.data.refundAmount}`);
+      const msg =
+        res.data.data.status === 'cancelled_with_refund'
+          ? `Booking cancelled. Refund: ₹${res.data.data.refundAmount}`
+          : 'Booking cancelled.';
+      toast.success(msg);
     },
     onError: () => toast.error('Failed to cancel booking'),
   });

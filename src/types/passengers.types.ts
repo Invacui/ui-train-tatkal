@@ -29,7 +29,7 @@ export interface PassengerFormValues {
   name: string;
   age: number;
   gender: Gender;
-  idCardType: IdCardType;
-  idCardNumber: string;
   berthPreference?: BerthPreference;
+  idType?: string;
+  idNumber?: string;
 }

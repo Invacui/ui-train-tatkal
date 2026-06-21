@@ -22,6 +22,44 @@ export interface PaymentInfo {
   updatedAt: string;
 }
 
+// --- Razorpay-specific types ---
+
+/** DTO for initiating a Razorpay order */
+export interface RazorpayInitiateDto {
+  bookingId: string;
+  amount: number;    // in paise
+  currency?: string;
+}
+
+/** Response from Razorpay order initiation */
+export interface RazorpayInitiateResponse {
+  razorpayOrderId: string;
+  razorpayKeyId: string;
+  amount: number;
+  currency: string;
+  bookingId: string;
+  prefill: {
+    name: string;
+    email: string;
+    contact: string;
+  };
+}
+
+/** DTO for verifying a Razorpay payment after checkout */
+export interface RazorpayVerifyDto {
+  bookingId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}
+
+/** Response from successful Razorpay payment verification */
+export interface RazorpayVerifyResponse {
+  bookingId: string;
+  status: string;
+  paymentId: string;
+}
+
 // Payload for initiating a payment
 export interface InitiatePaymentDto {
   bookingId: string;

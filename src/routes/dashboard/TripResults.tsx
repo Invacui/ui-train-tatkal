@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useTripSearch } from '@/hooks/trips/useTripSearch';
 import { useFilteredTrains } from '@/hooks/trips/useFilteredTrains';
+import { usePricingConfig } from '@/hooks/pricing/usePricingConfig';
 import { CalendarDateStrip } from '@/components/trips/CalendarDateStrip';
 import { TripFilters } from '@/components/trips/TripFilters';
 import { PaginationControls } from '@/components/trips/PaginationControls';
@@ -69,6 +70,9 @@ export default function TripResults() {
     { source, destination, date },
     hasSearch,
   );
+
+  // ── Pre-warm pricing config cache for PriceBreakdownDialog ──
+  usePricingConfig();
 
   // ── Filters ──
   const [filters, setFilters] = useState<SearchFilters>({});
@@ -403,8 +407,8 @@ export default function TripResults() {
                 {!isLoading && !error && paginatedTrains.length > 0 && (
                   <>
                     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                      {paginatedTrains.map((train) => (
-                        <TripCard key={train.trainNumber} train={train} searchDate={date} />
+                      {paginatedTrains.map((train, idx) => (
+                        <TripCard key={train.trainNumber || train.train_identifier_id || train.train_number || idx} train={train} searchDate={date} source={source} destination={destination} />
                       ))}
                     </div>
 

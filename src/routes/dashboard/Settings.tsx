@@ -6,52 +6,60 @@
  */
 
 // Helmet for setting page title/meta tags
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from "react-helmet-async";
 
 // React Hook Form for form state management
-import { useForm } from 'react-hook-form';
+import { useForm } from "react-hook-form";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 // UI button component
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 
 // UI input component
-import { Input } from '@/components/ui/input';
+import { Input } from "@/components/ui/input";
+
+// Badge component for email verification status
+import { Badge } from "@/components/ui/badge";
 
 // Card components for layout
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Page header with title and description
-import { PageHeader } from '@/components/common/PageHeader';
+import { PageHeader } from "@/components/common/PageHeader";
 
 // Profile components
-import { UserAddressForm } from '@/components/profile/UserAddressForm';
-import { FamilyMemberList } from '@/components/profile/FamilyMemberList';
-import { FamilyMemberForm } from '@/components/profile/FamilyMemberForm';
-import { FileDropzone } from '@/components/common/FileDropzone';
+import { UserAddressForm } from "@/components/profile/UserAddressForm";
+import { FamilyMemberList } from "@/components/profile/FamilyMemberList";
+import { FamilyMemberForm } from "@/components/profile/FamilyMemberForm";
+import { FileDropzone } from "@/components/common/FileDropzone";
 
 // Redux hooks for accessing auth state
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector } from "@/store/hooks";
 
 // Selector to access current user info
-import { selectUser } from '@/store/auth.slice';
+import { selectUser } from "@/store/auth.slice";
 
 // Custom hooks
-import { useUpdateProfile } from '@/hooks/auth/useUpdateProfile';
-import { useChangePassword } from '@/hooks/auth/useChangePassword';
-import { useUpdateAddress } from '@/hooks/profile/useUpdateAddress';
-import { useAddFamilyMember, useUpdateFamilyMember, useDeleteFamilyMember } from '@/hooks/profile/useFamilyMembers';
-import { useFileUpload } from '@/hooks/common/useFileUpload';
+import { useUpdateProfile } from "@/hooks/auth/useUpdateProfile";
+import { useChangePassword } from "@/hooks/auth/useChangePassword";
+import { useUpdateAddress } from "@/hooks/profile/useUpdateAddress";
+import {
+  useAddFamilyMember,
+  useUpdateFamilyMember,
+  useDeleteFamilyMember,
+} from "@/hooks/profile/useFamilyMembers";
+import { useFileUpload } from "@/hooks/common/useFileUpload";
 
 // Validation rules for form fields
-import { validationRules } from '@/lib/validationRules';
+import { validationRules } from "@/lib/validationRules";
 
 // Toast notification for success feedback
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 // Types
-import type { FamilyMember, UserAddress } from '@/types/auth.types';
+import type { FamilyMember, UserAddress } from "@/types/auth.types";
+import { useSendEmailVerification } from "@/hooks/auth/useVerifyEmail";
 
 /**
  * Settings (page component)
@@ -62,6 +70,7 @@ export default function Settings() {
   const user = useAppSelector(selectUser);
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
   const { mutate: changePassword, isPending: isChanging } = useChangePassword();
+  const { mutate: sendVerification, isPending: isSendingVerification } = useSendEmailVerification();
 
   // Address
   const updateAddress = useUpdateAddress();
@@ -77,94 +86,178 @@ export default function Settings() {
   // Aadhar
   const fileUpload = useFileUpload();
   const { mutate: updateProfileWithAadhar, isPending: isAadharUploading } = useUpdateProfile();
-  const [aadharId, setAadharId] = useState(user?.aadharId || '');
+  const [aadharId, setAadharId] = useState(user?.aadharId || "");
   const [isUploadingAadhar, setIsUploadingAadhar] = useState(false);
 
   const { register: regProfile, handleSubmit: submitProfile } = useForm({
-    defaultValues: { name: user?.name || '', email: user?.email || '', phone: user?.phone || '' },
+    defaultValues: { name: user?.name || "", email: user?.email || "", phone: user?.phone || "" },
   });
 
-  const { register: regPassword, handleSubmit: submitPassword, watch, reset: resetPassword } = useForm();
+  const {
+    register: regPassword,
+    handleSubmit: submitPassword,
+    watch,
+    reset: resetPassword,
+  } = useForm();
 
   const handleAadharFileUpload = async (files: File[]) => {
     if (files.length === 0) return;
     setIsUploadingAadhar(true);
     try {
-      const url = await fileUpload.upload(files[0], 'aadhar');
-      updateProfileWithAadhar(
-        { aadharId, aadharDocUrl: url } as any,
-        { onSuccess: () => toast.success('Aadhar document uploaded') },
-      );
+      const url = await fileUpload.upload(files[0], "aadhar");
+      updateProfileWithAadhar({ aadharId, aadharDocUrl: url } as any, {
+        onSuccess: () => toast.success("Aadhar document uploaded"),
+      });
     } catch {
-      toast.error('Failed to upload document');
+      toast.error("Failed to upload document");
     } finally {
       setIsUploadingAadhar(false);
     }
   };
 
   const handleSaveAadharId = () => {
-    updateProfileWithAadhar(
-      { aadharId } as any,
-      { onSuccess: () => toast.success('Aadhar ID saved') },
-    );
+    updateProfileWithAadhar({ aadharId } as any, {
+      onSuccess: () => toast.success("Aadhar ID saved"),
+    });
   };
 
   const familyMembers = user?.familyMembers || [];
 
   return (
     <>
-      <Helmet><meta name="robots" content="noindex" /></Helmet>
+      <Helmet>
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <div className="flex flex-col gap-6">
         <PageHeader title="Settings" description="Manage your account" />
 
         {/* Profile Section */}
         <Card>
-          <CardHeader><CardTitle>Profile</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Profile</CardTitle>
+          </CardHeader>
           <CardContent>
-            <form onSubmit={submitProfile((v) => updateProfile(v, { onSuccess: () => toast.success('Profile updated') }))} className="flex flex-col gap-4">
+            <form
+              onSubmit={submitProfile((v) => {
+                const emailChanged = v.email && v.email !== user?.email;
+                updateProfile(v, {
+                  onSuccess: () => {
+                    if (emailChanged) {
+                      sendVerification(
+                        { email: v.email, isEmailNew: true },
+                        {
+                          onSuccess: () =>
+                            toast.success(
+                              `Verification email sent to ${v.email}. Please verify before booking.`
+                            ),
+                        }
+                      );
+                    } else {
+                      toast.success("Profile updated");
+                    }
+                  },
+                });
+              })}
+              className="flex flex-col gap-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Name</label>
-                  <Input {...regProfile('name', validationRules.name)} />
+                  <Input {...regProfile("name", validationRules.name)} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Email</label>
-                  <Input {...regProfile('email', validationRules.email)} disabled />
+                  <Input {...regProfile("email", validationRules.email)} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Phone</label>
-                  <Input {...regProfile('phone', validationRules.phone)} />
+                  <Input {...regProfile("phone", validationRules.phone)} />
                 </div>
               </div>
               <Button type="submit" disabled={isUpdating} className="w-fit">
-                {isUpdating ? 'Saving…' : 'Save changes'}
+                {isUpdating ? "Saving…" : "Save changes"}
               </Button>
             </form>
           </CardContent>
         </Card>
 
+        {/* Email Verification Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Email Verification</CardTitle>
+              {user?.emailVerified ? (
+                <Badge
+                  variant="outline"
+                  className="bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800">
+                  ✓ Verified
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-200 border-amber-200 dark:border-amber-800">
+                  ⚠ Not Verified
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Current email: <span className="font-medium text-foreground">{user?.email}</span>
+            </p>
+            {user?.emailVerified ? (
+              <p className="text-sm text-green-600 dark:text-green-400">
+                Your email is verified. You can change it above — a new verification link will be
+                sent.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-amber-600 dark:text-amber-400">
+                  Your email is not verified. Please verify to access all features including
+                  bookings.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => sendVerification({ email: user?.email })}
+                  disabled={isSendingVerification}>
+                  {isSendingVerification ? "Sending…" : "Resend Verification Email"}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Change Password Section */}
         <Card>
-          <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Change Password</CardTitle>
+          </CardHeader>
           <CardContent>
-            <form onSubmit={submitPassword((v) => changePassword(
-              { oldPassword: v.oldPassword, newPassword: v.newPassword },
-              { onSuccess: () => resetPassword() },
-            ))} className="flex flex-col gap-4 sm:max-w-sm">
+            <form
+              onSubmit={submitPassword((v) =>
+                changePassword(
+                  { oldPassword: v.oldPassword, newPassword: v.newPassword },
+                  { onSuccess: () => resetPassword() }
+                )
+              )}
+              className="flex flex-col gap-4 sm:max-w-sm">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Current password</label>
-                <Input type="password" {...regPassword('oldPassword', validationRules.password)} />
+                <Input type="password" {...regPassword("oldPassword", validationRules.password)} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">New password</label>
-                <Input type="password" {...regPassword('newPassword', validationRules.password)} />
+                <Input type="password" {...regPassword("newPassword", validationRules.password)} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Confirm new password</label>
-                <Input type="password" {...regPassword('confirmPassword', validationRules.confirmPassword(watch))} />
+                <Input
+                  type="password"
+                  {...regPassword("confirmPassword", validationRules.confirmPassword(watch))}
+                />
               </div>
               <Button type="submit" disabled={isChanging} className="w-fit">
-                {isChanging ? 'Updating…' : 'Change password'}
+                {isChanging ? "Updating…" : "Change password"}
               </Button>
             </form>
           </CardContent>
@@ -181,7 +274,9 @@ export default function Settings() {
                 <div className="rounded-md border p-3 text-sm">
                   <p>{user.address.line1}</p>
                   {user.address.line2 && <p>{user.address.line2}</p>}
-                  <p>{user.address.city}, {user.address.state} — {user.address.pincode}</p>
+                  <p>
+                    {user.address.city}, {user.address.state} — {user.address.pincode}
+                  </p>
                   {user.address.lat && user.address.lon && (
                     <p className="text-xs text-muted-foreground mt-1">
                       Lat: {user.address.lat.toFixed(4)}, Lon: {user.address.lon.toFixed(4)}
@@ -195,9 +290,7 @@ export default function Settings() {
             ) : (
               <div className="space-y-3">
                 {!showAddressForm ? (
-                  <Button onClick={() => setShowAddressForm(true)}>
-                    Add Address
-                  </Button>
+                  <Button onClick={() => setShowAddressForm(true)}>Add Address</Button>
                 ) : (
                   <UserAddressForm
                     address={user?.address}
@@ -205,7 +298,7 @@ export default function Settings() {
                       updateAddress.mutate(addr, {
                         onSuccess: () => {
                           setShowAddressForm(false);
-                          toast.success('Address updated');
+                          toast.success("Address updated");
                         },
                       });
                     }}
@@ -235,8 +328,7 @@ export default function Settings() {
                 <Button
                   variant="outline"
                   onClick={handleSaveAadharId}
-                  disabled={isAadharUploading || !aadharId}
-                >
+                  disabled={isAadharUploading || !aadharId}>
                   Save
                 </Button>
               </div>
@@ -245,11 +337,18 @@ export default function Settings() {
               <label className="text-sm font-medium">Aadhar Document (PDF)</label>
               {user?.aadharDocUrl && (
                 <p className="text-xs text-muted-foreground mb-2">
-                  Current file: <a href={user.aadharDocUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">View document</a>
+                  Current file:{" "}
+                  <a
+                    href={user.aadharDocUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline">
+                    View document
+                  </a>
                 </p>
               )}
               <FileDropzone
-                accept={{ 'application/pdf': ['.pdf'] }}
+                accept={{ "application/pdf": [".pdf"] }}
                 onFile={async (file: File) => {
                   await handleAadharFileUpload([file]);
                 }}
@@ -273,7 +372,7 @@ export default function Settings() {
           }}
           onDelete={(id) => {
             deleteFamilyMember.mutate(id, {
-              onSuccess: () => toast.success('Family member removed'),
+              onSuccess: () => toast.success("Family member removed"),
             });
           }}
         />
@@ -285,13 +384,20 @@ export default function Settings() {
               if (editingMember) {
                 updateFamilyMember.mutate(
                   { id: editingMember.id, dto: data },
-                  { onSuccess: () => { setShowAddFamilyForm(false); toast.success('Family member updated'); } },
+                  {
+                    onSuccess: () => {
+                      setShowAddFamilyForm(false);
+                      toast.success("Family member updated");
+                    },
+                  }
                 );
               } else {
-                addFamilyMember.mutate(
-                  data,
-                  { onSuccess: () => { setShowAddFamilyForm(false); toast.success('Family member added'); } },
-                );
+                addFamilyMember.mutate(data, {
+                  onSuccess: () => {
+                    setShowAddFamilyForm(false);
+                    toast.success("Family member added");
+                  },
+                });
               }
             }}
             onCancel={() => {

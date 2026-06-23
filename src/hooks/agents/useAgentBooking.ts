@@ -13,6 +13,9 @@ import { queryKeys } from '@/lib/queryKeys';
 // Agents service API calls
 import { agentsService } from '@/services/agents.service';
 
+// Booking mapper
+import { mapBooking } from '@/lib/agents/bookingMapper';
+
 /**
  * useAgentBooking
  * @description Fetches detailed information about a specific booking assigned to the agent, identified by its booking ID. The query is disabled when no booking ID is provided.
@@ -23,7 +26,7 @@ export function useAgentBooking(bookingId: string) {
   return useQuery({
     queryKey: queryKeys.agents.booking(bookingId),
     queryFn: () => agentsService.getBooking(bookingId),
-    select: (res) => res.data.data,
+    select: (res) => mapBooking(res.data.data),
     enabled: !!bookingId,
   });
 }

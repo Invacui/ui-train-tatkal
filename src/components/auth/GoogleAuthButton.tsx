@@ -30,6 +30,11 @@ interface GoogleAuthButtonProps {
   /** Fallback route for existing authenticated users (e.g. /dashboard) */
   redirectTo: string;
 
+  /** Auth role: 'customer' (default) for regular users, 'agent' for agent auth.
+   *  When 'agent', calls the agent-specific Google auth endpoint and uses
+   *  agent-specific onboarding/redirect logic. */
+  role?: 'customer' | 'agent';
+
   // --- GIS branded button appearance options (passed to google.accounts.id.renderButton) ---
   /** Google branded button theme: 'outline' | 'filled_blue' | 'filled_black' */
   buttonTheme?: 'outline' | 'filled_blue' | 'filled_black';
@@ -65,6 +70,7 @@ interface GoogleAuthButtonProps {
  */
 export function GoogleAuthButton({
   redirectTo,
+  role = 'customer',
   buttonTheme = 'outline',
   buttonSize = 'large',
   buttonShape = 'rectangular',
@@ -136,10 +142,23 @@ export function GoogleAuthButton({
         if (!credential) return;
         try {
           // Authenticate with the backend — useGoogleAuth dispatches auth to Redux
-          const res = await googleAuth({ idToken: credential });
-          const { user } = res.data.data;
+          const res = await googleAuth({ idToken: credential, role });
+          const data = res.data.data as any;
+          const { user } = data;
 
-          // New Google users have onboardingCompleted = false → redirect to onboarding
+          if (role === 'agent') {
+            // Agent-specific onboarding (carousel: business details, KYC, etc.)
+            if (data.requiresOnboarding) {
+              toast.success('Welcome! Please complete your agent profile.');
+              navigate(ROUTES.agent.onboarding);
+              return;
+            }
+            toast.success(`Signed in as ${user.name}`);
+            navigate(ROUTES.agent.root);
+            return;
+          }
+
+          // Regular user flow — new Google users have onboardingCompleted = false
           if (!user.onboardingCompleted) {
             toast.success('Welcome! Please complete your profile.');
             navigate(ROUTES.onboarding);

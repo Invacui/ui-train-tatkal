@@ -2,7 +2,8 @@
  * @file AgentLogin page
  * @module routes/auth/AgentLogin
  * @description Agent-specific login page with agent-branded UI.
- *   Uses the same useLogin hook — role-based redirect sends agents to /agent.
+ *   Uses POST /auth/agent/login which only accepts role: 'agent' users.
+ *   If requiresOnboarding is true, redirects to the onboarding carousel.
  */
 
 // Link for navigation
@@ -15,8 +16,8 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-// Custom hook for login mutation
-import { useLogin } from '@/hooks/auth/useLogin';
+// Custom hook for agent login mutation
+import { useAgentLogin } from '@/hooks/auth/useAgentLogin';
 
 // Validation rules and form value types
 import { validationRules, type LoginFormValues } from '@/lib/validationRules';
@@ -27,13 +28,16 @@ import { ROUTES } from '@/constants/routes';
 // Icons
 import { UserCheck } from 'lucide-react';
 
+// Google OAuth login button
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
+
 /**
  * AgentLogin (page component)
  * @description Agent-branded login page with "Agent Portal" heading.
- *   Uses the same useLogin hook which already handles role-based redirect.
+ *   Uses useAgentLogin hook which calls POST /auth/agent/login.
  */
 export default function AgentLogin() {
-  const { mutate, isPending } = useLogin();
+  const { mutate, isPending } = useAgentLogin();
   const {
     register,
     handleSubmit,
@@ -85,6 +89,12 @@ export default function AgentLogin() {
           {isPending ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+        <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">or</span></div>
+      </div>
+      <GoogleAuthButton redirectTo={ROUTES.agent.root} role="agent" />
 
       <div className="space-y-3 text-center text-sm text-muted-foreground">
         <p>

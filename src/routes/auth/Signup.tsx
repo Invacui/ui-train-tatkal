@@ -26,6 +26,9 @@ import { validationRules, type SignupFormValues } from '@/lib/validationRules';
 // Route constants for navigation links
 import { ROUTES } from '@/constants/routes';
 
+// Router navigation hook
+import { useNavigate } from 'react-router-dom';
+
 // Google OAuth signup button
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 
@@ -36,6 +39,7 @@ import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
  *   Google OAuth signup.
  */
 export default function Signup() {
+  const navigate = useNavigate();
   const { mutate, isPending } = useSignup();
   const {
     register,
@@ -52,7 +56,10 @@ export default function Signup() {
       </div>
 
       <form
-        onSubmit={handleSubmit((v) => mutate({ name: v.name, email: v.email, phone: v.phone, password: v.password }))}
+        onSubmit={handleSubmit((v) => mutate(
+          { name: v.name, email: v.email, phone: v.phone, password: v.password },
+          { onSuccess: () => navigate(ROUTES.signupVerify) },
+        ))}
         className="flex flex-col gap-4"
       >
         <div className="space-y-2">

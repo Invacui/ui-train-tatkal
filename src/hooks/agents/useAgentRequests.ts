@@ -13,6 +13,9 @@ import { queryKeys } from '@/lib/queryKeys';
 // Agents service API calls
 import { agentsService } from '@/services/agents.service';
 
+// Booking mapper
+import { mapBookingArray } from '@/lib/agents/bookingMapper';
+
 /**
  * useAgentRequests
  * @description Fetches all pending booking requests assigned to the authenticated agent. Automatically polls every 30 seconds to pick up new requests in real-time.
@@ -22,7 +25,7 @@ export function useAgentRequests() {
   return useQuery({
     queryKey: queryKeys.agents.requests(),
     queryFn: agentsService.getRequests,
-    select: (res) => res.data.data,
+    select: (res) => mapBookingArray(res.data.data),
     refetchInterval: 30_000, // Poll for new requests
   });
 }

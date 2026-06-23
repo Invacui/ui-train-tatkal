@@ -96,7 +96,8 @@ export function formatDuration(duration: string): string {
  * @param amount - Numeric amount to format
  * @returns Formatted currency string (e.g. "₹ 1,234")
  */
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(amount)) return '—';
   return `Rs ${amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 

@@ -80,8 +80,8 @@ export function BookingCard({ booking }: BookingCardProps) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 space-y-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold">{booking.trainName}</h3>
-              <span className="text-xs text-muted-foreground">({booking.trainNumber})</span>
+              <h3 className="font-semibold">{booking.trainName || booking.trainNumber}</h3>
+              {booking.trainName && <span className="text-xs text-muted-foreground">({booking.trainNumber})</span>}
             </div>
             {booking.pnrNumber && (
               <p className="text-sm text-muted-foreground">
@@ -91,7 +91,7 @@ export function BookingCard({ booking }: BookingCardProps) {
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <span>{booking.sourceStationCode} → {booking.destinationStationCode}</span>
               <span>{formatDate(booking.journeyDate)}</span>
-              <span>{booking.departureTime} - {booking.arrivalTime}</span>
+              {(booking.departureTime || booking.arrivalTime) && <span>{booking.departureTime}{booking.departureTime && booking.arrivalTime ? " - " : ""}{booking.arrivalTime}</span>}
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge status={booking.status} />

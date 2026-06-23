@@ -40,16 +40,16 @@ export default function AgentStats() {
       <div className="flex flex-col gap-6">
         <PageHeader title="Performance Stats" description="Your booking metrics" />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {isLoading ? [1, 2, 3, 4, 5, 6].map((i) => (
+          {isLoading ? [1, 2, 3, 4, 5].map((i) => (
             <Skeleton key={i} className="h-24 rounded-lg" />
           )) : stats && (
             <>
-              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total Requests</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.totalRequests}</p></CardContent></Card>
-              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Accepted</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.acceptedRequests}</p></CardContent></Card>
-              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Completed</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.completedBookings}</p></CardContent></Card>
-              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Completion Rate</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{(stats.completionRate * 100).toFixed(0)}%</p></CardContent></Card>
+              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total Requests</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.totalBookings}</p></CardContent></Card>
+              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Completed</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.successfulBookings}</p></CardContent></Card>
+              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Failed</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.failedBookings}</p></CardContent></Card>
+              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Completion Rate</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.successRate.toFixed(0)}%</p></CardContent></Card>
               <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Rating</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.rating.toFixed(1)}</p></CardContent></Card>
-              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Current Load</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{stats.currentLoad}</p></CardContent></Card>
+              <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Earnings</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">₹{stats.earnings.toLocaleString()}</p></CardContent></Card>
             </>
           )}
         </div>

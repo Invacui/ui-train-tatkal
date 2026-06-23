@@ -1,6 +1,6 @@
 /**
  * @file Auth slice
- * @description Redux slice managing authentication state: user profile, tokens, and auth status. Persists user data to localStorage.
+ * @description Redux slice managing authentication state: user profile, agent data, tokens, and auth status. Persists user and agent data to localStorage.
  * @module store
  */
 
@@ -8,6 +8,8 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 // User profile type
 import type { User } from '@/types/auth.types';
+// Agent profile type
+import type { AgentProfile } from '@/types/agents.types';
 // User role type for selectors
 import type { UserRole } from '@/types/auth.types';
 
@@ -15,6 +17,8 @@ import type { UserRole } from '@/types/auth.types';
 interface AuthState {
   /** Current logged-in user, or null */
   user: User | null;
+  /** Current agent profile (only for agent-role users), or null */
+  agent: AgentProfile | null;
   /** JWT access token */
   accessToken: string | null;
   /** JWT refresh token */
@@ -24,8 +28,10 @@ interface AuthState {
 }
 
 const savedUser = localStorage.getItem('tt-user');
+const savedAgent = localStorage.getItem('tt-agent');
 const initialState: AuthState = {
   user: savedUser ? (JSON.parse(savedUser) as User) : null,
+  agent: savedAgent ? (JSON.parse(savedAgent) as AgentProfile) : null,
   accessToken: null,
   refreshToken: null,
   isAuthenticated: !!savedUser,
@@ -39,12 +45,10 @@ export const authSlice = createSlice({
      * setAuth
      * @description Sets the authenticated user and tokens after successful login/signup.
      *   Persists the user object to localStorage.
-     * @param state - Current auth state
-     * @param payload - Contains user, accessToken, and optional refreshToken
      */
     setAuth: (
       state,
-      { payload }: PayloadAction<{ user: User; accessToken: string; refreshToken?: string }>,
+      { payload }: PayloadAction<{ user: User; accessToken: string; refreshToken?: string; agent?: AgentProfile }>,
     ) => {
       state.user = payload.user;
       state.accessToken = payload.accessToken;
@@ -52,13 +56,23 @@ export const authSlice = createSlice({
       if (payload.refreshToken) {
         state.refreshToken = payload.refreshToken;
       }
+      if (payload.agent) {
+        state.agent = payload.agent;
+        localStorage.setItem('tt-agent', JSON.stringify(payload.agent));
+      }
       localStorage.setItem('tt-user', JSON.stringify(payload.user));
+    },
+    /**
+     * setAgent
+     * @description Updates the stored agent profile (e.g. after carousel step or profile update).
+     */
+    setAgent: (state, { payload }: PayloadAction<AgentProfile>) => {
+      state.agent = payload;
+      localStorage.setItem('tt-agent', JSON.stringify(payload));
     },
     /**
      * setToken
      * @description Updates the access token (used after silent token refresh)
-     * @param state - Current auth state
-     * @param payload - New access token string
      */
     setToken: (state, { payload }: PayloadAction<string>) => {
       state.accessToken = payload;
@@ -66,8 +80,6 @@ export const authSlice = createSlice({
     /**
      * updateUser
      * @description Replaces the stored user object (e.g. after profile update)
-     * @param state - Current auth state
-     * @param payload - Updated user object
      */
     updateUser: (state, { payload }: PayloadAction<User>) => {
       state.user = payload;
@@ -108,22 +120,21 @@ export const authSlice = createSlice({
      * @description Clears all auth state and removes the persisted user from localStorage (logout)
      */
     clearAuth: (state) => {
-      Object.assign(state, { user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+      Object.assign(state, { user: null, agent: null, accessToken: null, refreshToken: null, isAuthenticated: false });
       localStorage.removeItem('tt-user');
+      localStorage.removeItem('tt-agent');
     },
   },
 });
 
-/** Set the authenticated user and tokens */
-export const { setAuth, setToken, updateUser, setOnboardingCompleted, updateEmailVerified, updatePhoneVerified, clearAuth } = authSlice.actions;
+/** Actions */
+export const { setAuth, setAgent, setToken, updateUser, setOnboardingCompleted, updateEmailVerified, updatePhoneVerified, clearAuth } = authSlice.actions;
 
-/** Select the current user object */
+/** Selectors */
 export const selectUser = (s: { auth: AuthState }) => s.auth.user;
-/** Select whether the user is authenticated */
+export const selectAgent = (s: { auth: AuthState }) => s.auth.agent;
 export const selectIsAuthenticated = (s: { auth: AuthState }) => s.auth.isAuthenticated;
-/** Select the current access token */
 export const selectAccessToken = (s: { auth: AuthState }) => s.auth.accessToken;
-/** Select the user's role, or null if not logged in */
 export const selectUserRole = (s: { auth: AuthState }): UserRole | null => s.auth.user?.role ?? null;
 
 /** Auth reducer for store registration */

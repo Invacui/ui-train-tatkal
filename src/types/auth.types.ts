@@ -50,6 +50,8 @@ export interface SignupDto {
 // Google OAuth authentication payload
 export interface GoogleAuthDto {
   idToken: string;
+  /** Optional role hint — when 'agent', calls the agent-specific Google auth endpoint */
+  role?: 'customer' | 'agent';
 }
 
 // User onboarding completion payload
@@ -157,6 +159,34 @@ export interface AuthResponse {
     /** Flag indicating the user needs to complete onboarding (only set for new Google users) */
     requiresOnboarding?: boolean;
   };
+}
+
+// Agent authentication response (from /auth/agent/register and /auth/agent/login)
+export interface AgentAuthResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    agent: import('@/types/agents.types').AgentProfile;
+    accessToken: string;
+    refreshToken: string;
+    /** Flag indicating the carousel onboarding needs to be completed */
+    requiresOnboarding: boolean;
+  };
+}
+
+// Agent signup request payload
+export interface AgentSignupDto {
+  name: string;
+  email: string;
+  phone?: string;
+  password: string;
+}
+
+// Agent login request payload
+export interface AgentLoginDto {
+  email: string;
+  password: string;
 }
 
 // Token refresh response with new access token

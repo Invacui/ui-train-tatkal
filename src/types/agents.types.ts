@@ -8,6 +8,19 @@
 export type AgentStatus = 'pending' | 'active' | 'suspended';
 // Agent tier/level
 export type AgentTier = 'bronze' | 'silver' | 'gold';
+// Auth provider
+export type AgentAuthProvider = 'local' | 'google';
+
+/** Structured address with optional geolocation (same as UserAddress) */
+export interface AgentAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  lat?: number;
+  lon?: number;
+}
 
 // Agent listing info (used in search/listing contexts)
 export interface Agent {
@@ -28,38 +41,45 @@ export interface Agent {
   activeBookingsCount: number;
 }
 
-// Detailed agent profile with business info
+// Detailed agent profile as returned by /auth/agent/register, /auth/agent/login, and PATCH /agents/profile
 export interface AgentProfile {
   id: string;
-  businessName: string;
-  ownerName: string;
+  userId: string;
+  name: string;
   email: string;
   phone: string;
-  address: string;
-  city: string;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  authProvider: AgentAuthProvider;
+  onboardingCompleted: boolean;
+  businessName: string;
+  businessEmail?: string;
+  businessPhone?: string;
   panNumber: string;
   gstNumber: string;
+  address?: AgentAddress;
+  city: string;
   isRailwayCertified: boolean;
   dailyCapacity: number;
-  bankAccountNumber: string;
-  ifscCode: string;
+  serviceStations: string[];
   selfPhotoUrl: string;
   shopPhotoUrl: string;
+  bankAccountNumber: string;
+  ifscCode: string;
   status: AgentStatus;
   tier: AgentTier;
   rating: number;
   isOnline: boolean;
 }
 
-// Agent performance statistics
+// Agent performance statistics — matches backend GET /agents/stats
 export interface AgentStats {
-  totalRequests: number;
-  acceptedRequests: number;
-  completedBookings: number;
+  successRate: number;
+  totalBookings: number;
+  successfulBookings: number;
   failedBookings: number;
-  completionRate: number;
-  averageResponseTime: number;
-  currentLoad: number;
+  earnings: number;
+  tier: AgentTier;
   rating: number;
 }
 
@@ -72,12 +92,20 @@ export interface AgentEarnings {
   lastPayoutDate: string;
 }
 
-// Payload for agent onboarding registration
+// Single earnings entry as returned by GET /agents/earnings
+export interface AgentEarningsEntry {
+  bookingId: string;
+  amount: number;
+  date: string;
+  type: 'commission';
+}
+
+// Payload for agent onboarding registration (old full-onboard approach, kept for compatibility)
 export interface AgentOnboardDto {
   businessName: string;
   panNumber: string;
   gstNumber: string;
-  address: string;
+  address: AgentAddress;
   city: string;
   isRailwayCertified: boolean;
   dailyCapacity: number;

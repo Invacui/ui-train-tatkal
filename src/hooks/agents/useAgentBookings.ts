@@ -13,6 +13,9 @@ import { queryKeys } from '@/lib/queryKeys';
 // Agents service API calls
 import { agentsService } from '@/services/agents.service';
 
+// Booking mapper
+import { mapBookingArray } from '@/lib/agents/bookingMapper';
+
 /**
  * useAgentBookings
  * @description Fetches the agent's bookings with optional pagination. Returns both the booking list and pagination metadata.
@@ -24,7 +27,7 @@ export function useAgentBookings(params?: { page?: number; limit?: number }) {
     queryKey: queryKeys.agents.bookings(params),
     queryFn: () => agentsService.getBookings(params),
     select: (res) => ({
-      bookings: res.data.data,
+      bookings: mapBookingArray(res.data.data),
       pagination: res.data.pagination,
     }),
   });

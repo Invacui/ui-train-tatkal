@@ -23,6 +23,10 @@ export const ROUTES = {
   verifyEmail: '/verify-email',
   /** User onboarding page */
   onboarding: '/onboarding',
+  /** Signup email verification page */
+  signupVerify: '/signup/verify',
+  /** Onboarding address collection page */
+  onboardingAddress: '/onboarding/address',
   /** Customer dashboard */
   dashboard: '/dashboard',
   /** Trip search/results page */
@@ -54,6 +58,8 @@ export const ROUTES = {
     onboard: '/agent/onboard',
     /** Booking requests for agents */
     requests: '/agent/requests',
+    /** Single request detail (agent view) */
+    requestDetail: (id: string) => `/agent/requests/${id}` as const,
     /** Agent's bookings list */
     bookings: '/agent/bookings',
     /** Single booking detail (agent view) */
@@ -64,6 +70,10 @@ export const ROUTES = {
     earnings: '/agent/earnings',
     /** Agent team management */
     team: '/agent/team',
+    /** Agent profile page */
+    profile: '/agent/profile',
+    /** Agent onboarding carousel */
+    onboarding: '/agent/onboarding',
   },
   admin: {
     /** Admin dashboard root */

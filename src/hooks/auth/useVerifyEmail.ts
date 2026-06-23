@@ -18,12 +18,15 @@ import { queryKeys } from '@/lib/queryKeys';
 
 /**
  * useSendEmailVerification
- * @description Sends a verification email to the authenticated user's email address. On success, shows a confirmation toast. On failure, shows an error toast.
+ * @description Sends a verification email to the specified email address.
+ *   Takes { email, isEmailNew } where isEmailNew causes the backend to update
+ *   the user's email and reset emailVerified before sending the link.
  * @returns A React Query mutation object for triggering the email verification send mutation.
  */
 export function useSendEmailVerification() {
   return useMutation({
-    mutationFn: authService.sendEmailVerification,
+    mutationFn: (dto?: { email?: string; isEmailNew?: boolean }) =>
+      authService.sendEmailVerification(dto ?? { email: '' }),
     onSuccess: () => toast.success('Verification email sent'),
     onError: () => toast.error('Failed to send verification email'),
   });

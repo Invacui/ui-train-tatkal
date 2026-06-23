@@ -17,6 +17,10 @@ import { useVerifyEmail } from '@/hooks/auth/useVerifyEmail';
 // Route constants for navigation after success
 import { ROUTES } from '@/constants/routes';
 
+// Redux auth state
+import { useAppSelector } from '@/store/hooks';
+import { selectIsAuthenticated } from '@/store/auth.slice';
+
 // Skeleton placeholder while verifying
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -29,6 +33,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const token = searchParams.get('token') || '';
   const userId = searchParams.get('userId') || '';
   const { mutate } = useVerifyEmail();
@@ -37,11 +42,13 @@ export default function VerifyEmail() {
     if (token && userId) {
       mutate({ token, userId }, {
         onSuccess: () => {
-          setTimeout(() => navigate(ROUTES.login), 2000);
+          // If user is already authenticated (signup flow), redirect to address onboarding
+          // Otherwise, redirect to login (password reset or standalone verification)
+          setTimeout(() => navigate(isAuthenticated ? ROUTES.onboardingAddress : ROUTES.login), 2000);
         },
       });
     }
-  }, [token, userId, mutate, navigate]);
+  }, [token, userId, mutate, navigate, isAuthenticated]);
 
   return (
     <div className="flex flex-col items-center gap-4 py-8 text-center">

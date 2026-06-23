@@ -1,13 +1,14 @@
 /**
  * @file AgentSignup page
  * @module routes/auth/AgentSignup
- * @description Agent registration page. Uses the existing POST /auth/register endpoint,
- *   then redirects to /agent/onboard where the user submits their agent application
- *   via POST /agents/onboard (businessName, PAN, GST, address, bank info, etc.).
+ * @description Agent registration page. Uses POST /auth/agent/register to create
+ *   a User with role 'agent' and an Agent document with status 'active'.
+ *   After signup, the agent is redirected to the 6-step onboarding carousel
+ *   if requiresOnboarding is true.
  */
 
 // Router navigation
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 // React Hook Form for form state management
 import { useForm } from 'react-hook-form';
@@ -17,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 // Custom hooks
-import { useSignup } from '@/hooks/auth/useSignup';
+import { useAgentSignup } from '@/hooks/auth/useAgentSignup';
 
 // Validation rules and form value types
 import { validationRules, type SignupFormValues } from '@/lib/validationRules';
@@ -28,14 +29,16 @@ import { ROUTES } from '@/constants/routes';
 // Icons
 import { UserCheck } from 'lucide-react';
 
+// Google OAuth signup button
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
+
 /**
  * AgentSignup (page component)
  * @description Agent registration page. After successful signup via POST /auth/register,
  *   the user is redirected to /agent/onboard to complete their agent application.
  */
 export default function AgentSignup() {
-  const navigate = useNavigate();
-  const { mutate, isPending } = useSignup();
+  const { mutate, isPending } = useAgentSignup();
   const {
     register,
     handleSubmit,
@@ -44,14 +47,7 @@ export default function AgentSignup() {
   } = useForm<SignupFormValues>();
 
   const handleSignup = (values: SignupFormValues) => {
-    mutate(
-      { name: values.name, email: values.email, phone: values.phone, password: values.password },
-      {
-        onSuccess: () => {
-          navigate(ROUTES.agent.onboard);
-        },
-      },
-    );
+    mutate({ name: values.name, email: values.email, phone: values.phone, password: values.password });
   };
 
   return (
@@ -123,6 +119,12 @@ export default function AgentSignup() {
           {isPending ? 'Creating account…' : 'Register as Agent'}
         </Button>
       </form>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+        <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">or</span></div>
+      </div>
+      <GoogleAuthButton redirectTo={ROUTES.agent.root} role="agent" />
 
       <p className="text-center text-sm text-muted-foreground">
         Already an agent?{' '}

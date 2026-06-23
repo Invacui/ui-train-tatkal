@@ -14,11 +14,14 @@ import type {
   ForgotPasswordDto,
   ResetPasswordDto,
   AuthResponse,
+  AgentAuthResponse,
   GoogleAuthDto,
   UpdateMeDto,
   ChangePasswordDto,
   OnboardingDto,
   TokenRefreshResponse,
+  AgentSignupDto,
+  AgentLoginDto,
 } from '@/types/auth.types';
 
 // Profile-related DTOs
@@ -77,12 +80,17 @@ export const authService = {
    */
   login: (dto: LoginDto) => api.post<AuthResponse>('/auth/login', dto),
 
-  
+  agentLogin: (dto: AgentLoginDto) => api.post<AgentAuthResponse>('/auth/agent/login', dto),
+
+
   signup: (dto: SignupDto) => api.post<AuthResponse>('/auth/register', dto),
+  agentSignup: (dto: AgentSignupDto) => api.post<AgentAuthResponse>('/auth/agent/register', dto),
   logout: () => api.post('/auth/logout'),
   googleAuth: (dto: GoogleAuthDto) => api.post<AuthResponse>('/auth/google', dto),
+  agentGoogleAuth: (dto: GoogleAuthDto) => api.post<AgentAuthResponse>('/auth/agent/google', dto),
   onboarding: (dto: OnboardingDto) => api.post('/auth/onboarding', dto),
-  sendEmailVerification: () => api.post('/auth/send-email-verification'),
+  sendEmailVerification: (dto: { email: string; isEmailNew?: boolean }) =>
+    api.post('/auth/send-email-verification', dto),
   verifyEmail: (token: string, userId: string) =>
     api.get(`/auth/verify-email`, { params: { token, userId } }),
   changePassword: (dto: ChangePasswordDto) => api.patch('/auth/me/password', dto),
@@ -101,7 +109,7 @@ export const authService = {
    * @returns A promise resolving to the updated user profile.
    */
   updateAddress: (address: UserAddress) =>
-    api.patch<ApiResponse<User>>('/auth/me/address', { address }),
+    api.patch<ApiResponse<User>>('/auth/me/address', address),
 
   /**
    * addFamilyMember

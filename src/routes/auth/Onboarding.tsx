@@ -56,7 +56,7 @@ export default function Onboarding() {
           }
           dispatch(setOnboardingCompleted());
           toast.success('Profile completed!');
-          navigate(ROUTES.dashboard);
+          navigate(ROUTES.onboardingAddress);
         },
         onError: (error: any) => {
           toast.error(error?.response?.data?.message || 'Failed to complete profile');

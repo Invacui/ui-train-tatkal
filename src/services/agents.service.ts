@@ -15,6 +15,7 @@ import type {
   AgentProfile,
   AgentStats,
   AgentEarnings,
+  AgentEarningsEntry,
   AgentOnboardDto,
   TeamMemberDto,
 } from '@/types/agents.types';
@@ -125,7 +126,7 @@ export const agentsService = {
    * @returns A promise resolving to an API response containing the Booking details.
    */
   getBooking: (bookingId: string) =>
-    api.get<ApiResponse<Booking>>(`/agents/bookings/${bookingId}`),
+    api.get<ApiResponse<Booking>>(`/bookings/${bookingId}`),
 
   /**
    * getStats
@@ -138,8 +139,16 @@ export const agentsService = {
   /**
    * getEarnings
    * @description Fetches the agent's earnings data, including commissions and payout information.
-   * @returns A promise resolving to an API response containing the AgentEarnings.
+   * @returns A promise resolving to an API response containing an array of AgentEarningsEntry.
    */
   getEarnings: () =>
-    api.get<ApiResponse<AgentEarnings>>('/agents/earnings'),
+    api.get<ApiResponse<AgentEarningsEntry[]>>('/agents/earnings'),
+
+  /**
+   * completeOnboarding
+   * @description Marks the agent's onboarding carousel as completed.
+   * @returns A promise resolving to the API response.
+   */
+  completeOnboarding: () =>
+    api.post('/agents/complete-onboarding'),
 };

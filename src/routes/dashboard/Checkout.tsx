@@ -35,6 +35,8 @@ import { useUpdateProfile } from "@/hooks/auth/useUpdateProfile";
 import { toast } from "sonner";
 import { bookingsService } from "@/services/bookings.service";
 
+import { EmailVerificationPrompt } from "@/components/auth/EmailVerificationPrompt";
+
 import { useBooking } from "@/hooks/bookings/useBooking";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import {
@@ -754,6 +756,19 @@ export default function Checkout() {
 
   if (hasError) {
     return <ErrorState message="Train not found. Please go back and try again." />;
+  }
+
+  // Email verification guard — must verify before booking
+  if (!user?.emailVerified) {
+    return (
+      <div className="flex items-start justify-center py-12">
+        <EmailVerificationPrompt
+          title="Verify Email to Book"
+          description="You need to verify your email before you can book a ticket."
+          onVerified={() => window.location.reload()}
+        />
+      </div>
+    );
   }
 
   return (

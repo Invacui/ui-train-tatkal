@@ -38,6 +38,8 @@ const ForgotPassword = lazy(() => import('@/routes/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('@/routes/auth/ResetPassword'));
 const VerifyEmail = lazy(() => import('@/routes/auth/VerifyEmail'));
 const Onboarding = lazy(() => import('@/routes/auth/Onboarding'));
+const SignupVerify = lazy(() => import('@/routes/auth/SignupVerify'));
+const OnboardingAddress = lazy(() => import('@/routes/auth/OnboardingAddress'));
 const AgentLogin = lazy(() => import('@/routes/auth/AgentLogin'));
 const AgentSignup = lazy(() => import('@/routes/auth/AgentSignup'));
 const AdminLoginLazy = lazy(() => import('@/routes/auth/AdminLogin'));
@@ -53,13 +55,15 @@ const Settings = lazy(() => import('@/routes/dashboard/Settings'));
 
 // ---- Lazy loaded agent pages ----
 const AgentOverview = lazy(() => import('@/routes/agent/Overview'));
-const AgentOnboard = lazy(() => import('@/routes/agent/Onboard'));
+const AgentOnboardingCarousel = lazy(() => import('@/routes/agent/OnboardingCarousel'));
 const AgentRequests = lazy(() => import('@/routes/agent/Requests'));
+const AgentRequestDetail = lazy(() => import('@/routes/agent/RequestDetail'));
 const AgentBookingsList = lazy(() => import('@/routes/agent/BookingsList'));
 const AgentBookingDetail = lazy(() => import('@/routes/agent/BookingDetail'));
 const AgentStats = lazy(() => import('@/routes/agent/Stats'));
 const AgentEarnings = lazy(() => import('@/routes/agent/Earnings'));
 const AgentTeam = lazy(() => import('@/routes/agent/Team'));
+const AgentProfile = lazy(() => import('@/routes/agent/Profile'));
 
 // ---- Lazy loaded admin pages ----
 const AdminOverview = lazy(() => import('@/routes/admin/AdminOverview'));
@@ -125,11 +129,13 @@ const router = createBrowserRouter([
         ],
       },
 
-      // --- Onboarding (authenticated Google users) ---
+      // --- Onboarding (authenticated Google users & post-signup flow) ---
       {
         element: <S><OnboardingLayout /></S>,
         children: [
           { path: ROUTES.onboarding, element: <S><Onboarding /></S> },
+          { path: ROUTES.signupVerify, element: <S><SignupVerify /></S> },
+          { path: ROUTES.onboardingAddress, element: <S><OnboardingAddress /></S> },
         ],
       },
 
@@ -152,13 +158,15 @@ const router = createBrowserRouter([
         element: <S><AgentLayout /></S>,
         children: [
           { path: ROUTES.agent.root, element: <S><AgentOverview /></S> },
-          { path: ROUTES.agent.onboard, element: <S><AgentOnboard /></S> },
+          { path: ROUTES.agent.onboarding, element: <S><AgentOnboardingCarousel /></S> },
           { path: ROUTES.agent.requests, element: <S><AgentRequests /></S> },
+          { path: '/agent/requests/:bookingId', element: <S><AgentRequestDetail /></S> },
           { path: ROUTES.agent.bookings, element: <S><AgentBookingsList /></S> },
           { path: '/agent/bookings/:bookingId', element: <S><AgentBookingDetail /></S> },
           { path: ROUTES.agent.stats, element: <S><AgentStats /></S> },
           { path: ROUTES.agent.earnings, element: <S><AgentEarnings /></S> },
           { path: ROUTES.agent.team, element: <S><AgentTeam /></S> },
+          { path: ROUTES.agent.profile, element: <S><AgentProfile /></S> },
         ],
       },
 

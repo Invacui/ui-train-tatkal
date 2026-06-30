@@ -1,14 +1,15 @@
 /**
  * @file FamilyMemberSelector.tsx
- * @description Checkbox-based selector for choosing passengers from saved family members.
+ * @description Shows selected family members as removable chips and remaining
+ *   family members with a +Add button. Auto-selects all on first mount.
  * @module components/checkout
  */
 
 import { useMemo } from 'react';
 
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { User, X, Plus, Users } from 'lucide-react';
 
 import type { FamilyMember } from '@/types/auth.types';
 
@@ -22,9 +23,8 @@ interface FamilyMemberSelectorProps {
 
 /**
  * FamilyMemberSelector
- * @description Renders a list of saved family members with checkboxes. The user can
- *   select which family members to include as passengers. Shows a count indicator
- *   and an "Add new passenger" link for manual entry.
+ * @description Renders selected family members as removable chips and unselected
+ *   ones below with +Add buttons. On mount, all family members are auto-selected.
  */
 export function FamilyMemberSelector({
   familyMembers,
@@ -33,23 +33,29 @@ export function FamilyMemberSelector({
   onSelectionChange,
   onAddNew,
 }: FamilyMemberSelectorProps) {
+  const selectedMembers = useMemo(
+    () => familyMembers.filter((m) => selectedIds.includes(m.id)),
+    [familyMembers, selectedIds],
+  );
+  const availableMembers = useMemo(
+    () => familyMembers.filter((m) => !selectedIds.includes(m.id)),
+    [familyMembers, selectedIds],
+  );
+
   const remaining = maxSeats - selectedIds.length;
+  const isAtMax = remaining <= 0;
 
-  // The primary/self user is always shown as the first "member"
-  const allEntries = useMemo(() => {
-    const entries = familyMembers.map((m) => ({ ...m, isPrimary: false }));
-    return entries;
-  }, [familyMembers]);
-
-  const toggleMember = (id: string) => {
-    if (selectedIds.includes(id)) {
-      onSelectionChange(selectedIds.filter((i) => i !== id));
-    } else if (remaining > 0) {
+  const addMember = (id: string) => {
+    if (!isAtMax) {
       onSelectionChange([...selectedIds, id]);
     }
   };
 
-  if (allEntries.length === 0) {
+  const removeMember = (id: string) => {
+    onSelectionChange(selectedIds.filter((i) => i !== id));
+  };
+
+  if (familyMembers.length === 0) {
     return (
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
@@ -60,31 +66,58 @@ export function FamilyMemberSelector({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Label className="font-medium">Select from Family Members</Label>
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Family Members</span>
+        </div>
         <span className="text-xs text-muted-foreground">
-          {selectedIds.length} of {maxSeats} seats filled
+          {selectedIds.length} of {Math.min(familyMembers.length, maxSeats)} selected
         </span>
       </div>
 
-      <div className="space-y-2">
-        {allEntries.map((member) => {
-          const isSelected = selectedIds.includes(member.id);
-          const isDisabled = !isSelected && remaining <= 0;
-          return (
-            <label
+      {/* Selected members — removable chips */}
+      {selectedMembers.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {selectedMembers.map((member) => (
+            <Badge
               key={member.id}
-              className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors
-                ${isSelected ? 'border-primary bg-primary/5' : ''}
-                ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <Checkbox
-                checked={isSelected}
-                disabled={isDisabled}
-                onCheckedChange={() => toggleMember(member.id)}
-              />
-              <User className="h-5 w-5 text-muted-foreground" />
+              variant="secondary"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-normal cursor-default">
+              <User className="h-3.5 w-3.5" />
+              <span>
+                {member.firstName} {member.lastName}
+              </span>
+              <span className="text-muted-foreground mx-0.5">·</span>
+              <span className="text-muted-foreground text-xs">{member.relation}</span>
+              <button
+                type="button"
+                onClick={() => removeMember(member.id)}
+                className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors"
+                title="Remove from booking">
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {/* Available members to add */}
+      {availableMembers.length > 0 && (
+        <div className="space-y-1.5">
+          {availableMembers.map((member) => (
+            <button
+              key={member.id}
+              type="button"
+              disabled={isAtMax}
+              onClick={() => addMember(member.id)}
+              className={`flex w-full items-center gap-3 rounded-md border p-3 text-left transition-colors
+                ${isAtMax ? 'opacity-40 cursor-not-allowed' : 'hover:bg-muted/50 cursor-pointer'}`}>
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-muted-foreground/40">
+                <Plus className="h-4 w-4 text-muted-foreground" />
+              </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">
                   {member.firstName} {member.lastName}
@@ -93,16 +126,15 @@ export function FamilyMemberSelector({
                   {member.gender}, Age {member.age} · {member.relation}
                 </p>
               </div>
-            </label>
-          );
-        })}
-      </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       <button
         type="button"
         onClick={onAddNew}
-        className="text-sm text-primary hover:underline"
-      >
+        className="text-sm text-primary hover:underline">
         + Add new passenger manually
       </button>
     </div>

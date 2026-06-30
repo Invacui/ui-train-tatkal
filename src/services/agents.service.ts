@@ -120,6 +120,23 @@ export const agentsService = {
     api.patch(`/agents/bookings/${bookingId}/ticket`, { ticketPhotoUrl }),
 
   /**
+   * uploadTicketFile
+   * @description Uploads a ticket photo file via multipart POST.
+   *   Transitions booking status from at_counter to booking_in_progress
+   *   and saves the ticket photo URL in one call.
+   * @param {string} bookingId - The unique booking identifier.
+   * @param {File} file - The ticket photo file (JPEG, PNG, or WebP, max 5 MB).
+   * @returns A promise resolving to an API response containing the uploaded URL.
+   */
+  uploadTicketFile: (bookingId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/agents/bookings/${bookingId}/upload/ticket`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  /**
    * getBooking
    * @description Fetches detailed information about a specific booking assigned to the agent.
    * @param {string} bookingId - The unique booking identifier.

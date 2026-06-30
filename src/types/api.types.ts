@@ -39,3 +39,8 @@ export interface ApiError {
   error?: string;
   errors?: string[];
 }
+
+// Upload result returned by file upload endpoints
+export interface UploadResult {
+  url: string;
+}

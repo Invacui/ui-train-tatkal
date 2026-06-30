@@ -1,37 +1,39 @@
 /**
  * @file Pricing types
- * @description Types for pricing configuration, admin-configurable fee breakdown
+ * @description Types for pricing configuration, matching the API's PricingConfig schema.
+ *   Only one active config exists at a time — updates create a new version.
  * @module types
  */
 
-/** Pricing configuration model (fetched from DB, admin-configurable) */
-export interface PricingConfig {
-  brokeragePercent: number;
-  agentChargePercent: number;
-  baseFixedCharge: number;
-  flatChargePerBooking: number;
-  perKmCharge: number;
-  platformCharge: number;
-  homeDeliveryCharge: number;
+/** Home-delivery charge breakdown (nested under PricingConfig) */
+export interface HomeDeliveryCharge {
   printingCharge: number;
-  tatkalPremiumPercent: number;
-  convenienceFeePercent: number;
-  gstPercent: number;
-  lastUpdatedBy: string;
-  isActive: boolean;
+  handlingCharge: number;
 }
 
-/** DTO for updating pricing config (admin only, partial update) */
-export interface PricingConfigUpdateDto {
-  brokeragePercent?: number;
-  agentChargePercent?: number;
-  baseFixedCharge?: number;
-  flatChargePerBooking?: number;
-  perKmCharge?: number;
-  platformCharge?: number;
-  homeDeliveryCharge?: number;
-  printingCharge?: number;
-  tatkalPremiumPercent?: number;
-  convenienceFeePercent?: number;
-  gstPercent?: number;
+/**
+ * Pricing configuration model — matches GET /pricing/config response
+ * and PUT /admin/pricing/config request/response from the API.
+ */
+export interface PricingConfig {
+  _id?: string;
+  /** Agent fee percentage applied to total base fare (default 5) */
+  agentChargePercent: number;
+  /** Platform fee percentage applied to total base fare (default 3) */
+  platformFeePercent: number;
+  /** Home-delivery charge breakdown */
+  homeDeliveryCharge: HomeDeliveryCharge;
+  /** GST percentage applied to the entire subtotal (default 18) */
+  gstPercent: number;
+  /** Whether this config is the active one */
+  isActive: boolean;
+  lastUpdatedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+/**
+ * DTO for updating pricing config (admin only, partial update).
+ * All fields are optional — only provided fields are updated.
+ */
+export type PricingConfigUpdateDto = Partial<Omit<PricingConfig, '_id' | 'createdAt' | 'updatedAt'>>;

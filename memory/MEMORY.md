@@ -1,0 +1,6 @@
+- [Agent Google OAuth fix](agent-google-oauth-fix.md) — Google OAuth was creating customer accounts instead of agents
+- [Aadhar upload fix](aadhar-upload-fix.md) — Fixed user dashboard Aadhar upload to use correct API endpoints
+- [Profile data persistence fix](profile-data-persistence-fix.md) — Family member/address hooks now dispatch to Redux so data survives navigation
+- [Aadhar file view via API](aadhar-file-view-api.md) — Added Aadhar document viewing via /files API endpoint
+- [Booking flow UX improvements](booking-flow-ux-improvements.md) — DeliveryStep address chip + auto-add family members in PassengerStep
+- [Profile sync hook + Aadhar flow fix](profile-sync-and-aadhar-flow.md) — Added useProfile query, sequential Aadhar upload/save flow, invalidate profile on all mutations

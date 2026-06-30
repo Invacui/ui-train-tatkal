@@ -106,16 +106,19 @@ export function mapBooking(raw: BackendBookingRaw): Booking {
     pricing: raw.totalAmount != null
       ? {
           baseFare: raw.ticketFare ?? 0,
-          irctcCharges: raw.platformFee ?? 0,
-          tatkalCharges: 0,
+          agentFee: raw.agentFee ?? 0,
+          platformFee: raw.platformFee ?? 0,
           convenienceFee: raw.convenienceFee ?? 0,
           gst: raw.gst ?? 0,
-          agentFee: 0,
+          deliveryCharge: raw.deliveryCharge ?? 0,
           discount: 0,
           totalAmount: raw.totalAmount,
         }
       : undefined,
     pnrNumber: raw.pnr ?? '',
+    ticketPhotoUrl: raw.ticketPhotoUrl ?? undefined,
+    eTicketUrl: raw.eTicketUrl ?? undefined,
+    pnrStatus: raw.pnrStatus ?? undefined,
     paymentId: raw.paymentId,
     razorpayOrderId: raw.razorpayOrderId,
     bookingMode: raw.bookingMode,

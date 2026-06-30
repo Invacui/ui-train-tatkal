@@ -11,12 +11,15 @@ import { useAppDispatch } from '@/store/hooks';
 import { updateUser } from '@/store/auth.slice';
 import { queryKeys } from '@/lib/queryKeys';
 
-import type { UserAddress, User } from '@/types/auth.types';
+import type { UserAddress } from '@/types/auth.types';
+import type { ApiResponse } from '@/types/api.types';
+import type { User } from '@/types/auth.types';
 
 /**
  * useUpdateAddress
  * @description Mutation to update the user's address. On success, updates the
- *   Redux auth store and invalidates the me query cache.
+ *   Redux auth store (both memory and localStorage) and invalidates the me
+ *   query cache so the change survives page navigation.
  * @returns React Query mutation accepting a UserAddress.
  */
 export function useUpdateAddress() {
@@ -26,11 +29,11 @@ export function useUpdateAddress() {
   return useMutation({
     mutationFn: async (address: UserAddress) => {
       const res = await authService.updateAddress(address);
-      return res.data.data;
+      return res.data as ApiResponse<User>;
     },
-    onSuccess: (updatedUser: User) => {
-      dispatch(updateUser(updatedUser));
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
+    onSuccess: (data) => {
+      dispatch(updateUser(data.data));
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
     },
   });
 }

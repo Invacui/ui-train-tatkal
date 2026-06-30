@@ -44,7 +44,7 @@ export default function AgentBookingsList() {
         {data?.bookings?.length ? (
           <div className="space-y-3">
             {data.bookings.map((booking) => (
-              <BookingCard key={booking.bookingId} booking={booking} />
+              <BookingCard key={booking.bookingId} booking={booking} agentView />
             ))}
           </div>
         ) : (

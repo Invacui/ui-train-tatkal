@@ -33,6 +33,7 @@ import { UserAddressForm } from "@/components/profile/UserAddressForm";
 import { FamilyMemberList } from "@/components/profile/FamilyMemberList";
 import { FamilyMemberForm } from "@/components/profile/FamilyMemberForm";
 import { FileDropzone } from "@/components/common/FileDropzone";
+import { authService } from "@/services/auth.service";
 
 // Redux hooks for accessing auth state
 import { useAppSelector } from "@/store/hooks";
@@ -41,6 +42,7 @@ import { useAppSelector } from "@/store/hooks";
 import { selectUser } from "@/store/auth.slice";
 
 // Custom hooks
+import { useProfile } from "@/hooks/auth/useProfile";
 import { useUpdateProfile } from "@/hooks/auth/useUpdateProfile";
 import { useChangePassword } from "@/hooks/auth/useChangePassword";
 import { useUpdateAddress } from "@/hooks/profile/useUpdateAddress";
@@ -49,7 +51,6 @@ import {
   useUpdateFamilyMember,
   useDeleteFamilyMember,
 } from "@/hooks/profile/useFamilyMembers";
-import { useFileUpload } from "@/hooks/common/useFileUpload";
 
 // Validation rules for form fields
 import { validationRules } from "@/lib/validationRules";
@@ -60,6 +61,7 @@ import { toast } from "sonner";
 // Types
 import type { FamilyMember, UserAddress } from "@/types/auth.types";
 import { useSendEmailVerification } from "@/hooks/auth/useVerifyEmail";
+import { useUpdateAadhar } from "@/hooks/profile/useUpdateAadhar";
 
 /**
  * Settings (page component)
@@ -68,6 +70,10 @@ import { useSendEmailVerification } from "@/hooks/auth/useVerifyEmail";
  */
 export default function Settings() {
   const user = useAppSelector(selectUser);
+
+  // Fetch fresh profile on mount — syncs Redux with latest server state for
+  // address, family members, and Aadhar details
+  useProfile();
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
   const { mutate: changePassword, isPending: isChanging } = useChangePassword();
   const { mutate: sendVerification, isPending: isSendingVerification } = useSendEmailVerification();
@@ -84,10 +90,42 @@ export default function Settings() {
   const [showAddFamilyForm, setShowAddFamilyForm] = useState(false);
 
   // Aadhar
-  const fileUpload = useFileUpload();
-  const { mutate: updateProfileWithAadhar, isPending: isAadharUploading } = useUpdateProfile();
+  const { mutate: updateAadhar, isPending: isAadharSaving } = useUpdateAadhar();
   const [aadharId, setAadharId] = useState(user?.aadharId || "");
+  const [uploadedDocUrl, setUploadedDocUrl] = useState<string | null>(null);
   const [isUploadingAadhar, setIsUploadingAadhar] = useState(false);
+
+  /** True once a document URL is available (fresh upload or saved in profile) */
+  const hasAadharDoc = !!(uploadedDocUrl || user?.aadharDocUrl);
+  const effectiveDocUrl = uploadedDocUrl || user?.aadharDocUrl || "";
+
+  const handleAadharFileUpload = async (files: File[]) => {
+    if (files.length === 0) return;
+    setIsUploadingAadhar(true);
+    try {
+      const res = await authService.uploadAadhar(files[0]);
+      const url = res.data.data.url;
+      setUploadedDocUrl(url);
+      toast.success("Document uploaded successfully");
+    } catch {
+      toast.error("Failed to upload document");
+    } finally {
+      setIsUploadingAadhar(false);
+    }
+  };
+
+  const handleSaveAadhar = () => {
+    if (!aadharId || !hasAadharDoc) return;
+    updateAadhar(
+      { aadharId, aadharDocUrl: effectiveDocUrl },
+      {
+        onSuccess: () => {
+          setUploadedDocUrl(null); // Clear local state — Redux now holds the canonical value
+          toast.success("Aadhar details saved");
+        },
+      },
+    );
+  };
 
   const { register: regProfile, handleSubmit: submitProfile } = useForm({
     defaultValues: { name: user?.name || "", email: user?.email || "", phone: user?.phone || "" },
@@ -100,25 +138,27 @@ export default function Settings() {
     reset: resetPassword,
   } = useForm();
 
-  const handleAadharFileUpload = async (files: File[]) => {
-    if (files.length === 0) return;
-    setIsUploadingAadhar(true);
-    try {
-      const url = await fileUpload.upload(files[0], "aadhar");
-      updateProfileWithAadhar({ aadharId, aadharDocUrl: url } as any, {
-        onSuccess: () => toast.success("Aadhar document uploaded"),
-      });
-    } catch {
-      toast.error("Failed to upload document");
-    } finally {
-      setIsUploadingAadhar(false);
+  const handleViewAadharDocument = async () => {
+    const previewUrl = uploadedDocUrl || user?.aadharDocUrl;
+    if (!previewUrl) {
+      toast.error("No Aadhar document uploaded yet");
+      return;
     }
-  };
-
-  const handleSaveAadharId = () => {
-    updateProfileWithAadhar({ aadharId } as any, {
-      onSuccess: () => toast.success("Aadhar ID saved"),
-    });
+    // If we just uploaded (not saved yet), open the local URL directly
+    if (uploadedDocUrl) {
+      window.open(uploadedDocUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    // Otherwise fetch via API for a fresh URL
+    try {
+      const res = await authService.getFileUrl("user", user!.id, "aadhar");
+      window.open(res.data.data.url, "_blank", "noopener,noreferrer");
+    } catch {
+      // Fallback to the stored URL
+      if (user?.aadharDocUrl) {
+        window.open(user.aadharDocUrl, "_blank", "noopener,noreferrer");
+      }
+    }
   };
 
   const familyMembers = user?.familyMembers || [];
@@ -315,9 +355,46 @@ export default function Settings() {
           <CardHeader>
             <CardTitle>Aadhar Verification</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* Step 1: Upload Document */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Aadhar Number</label>
+              <label className="text-sm font-medium">Step 1: Upload Aadhar Document</label>
+              {hasAadharDoc && (
+                <div className="flex items-center gap-2 mb-2 text-sm">
+                  <span className="text-green-600 font-medium">✓ Document uploaded</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleViewAadharDocument}>
+                    View
+                  </Button>
+                  {uploadedDocUrl && (
+                    <span className="text-xs text-muted-foreground">
+                      (Save your Aadhar number below to persist)
+                    </span>
+                  )}
+                </div>
+              )}
+              <FileDropzone
+                accept={{
+                  "image/jpeg": [".jpg", ".jpeg"],
+                  "image/png": [".png"],
+                  "image/webp": [".webp"],
+                  "application/pdf": [".pdf"],
+                }}
+                onFile={async (file: File) => {
+                  await handleAadharFileUpload([file]);
+                }}
+              />
+              {isUploadingAadhar && (
+                <p className="text-xs text-muted-foreground">Uploading...</p>
+              )}
+            </div>
+
+            {/* Step 2: Enter Aadhar Number */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Step 2: Enter Aadhar Number</label>
               <div className="flex gap-2">
                 <Input
                   value={aadharId}
@@ -326,34 +403,21 @@ export default function Settings() {
                   className="max-w-xs"
                 />
                 <Button
-                  variant="outline"
-                  onClick={handleSaveAadharId}
-                  disabled={isAadharUploading || !aadharId}>
-                  Save
+                  onClick={handleSaveAadhar}
+                  disabled={isAadharSaving || !aadharId || !hasAadharDoc}>
+                  {isAadharSaving ? "Saving…" : "Save"}
                 </Button>
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Aadhar Document (PDF)</label>
-              {user?.aadharDocUrl && (
-                <p className="text-xs text-muted-foreground mb-2">
-                  Current file:{" "}
-                  <a
-                    href={user.aadharDocUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline">
-                    View document
-                  </a>
+              {!hasAadharDoc && (
+                <p className="text-xs text-amber-600">
+                  Upload a document first to enable saving.
                 </p>
               )}
-              <FileDropzone
-                accept={{ "application/pdf": [".pdf"] }}
-                onFile={async (file: File) => {
-                  await handleAadharFileUpload([file]);
-                }}
-              />
-              {isUploadingAadhar && <p className="text-xs text-muted-foreground">Uploading...</p>}
+              {hasAadharDoc && !uploadedDocUrl && user?.aadharDocUrl && (
+                <p className="text-xs text-muted-foreground">
+                  Document already saved. You can re-upload to replace it.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -4,10 +4,11 @@
  * @description Full multi-step checkout flow (7 steps):
  *   preferences → delivery → passengers → pricing → agent-matching → payment → confirmation
  *
- * Train data resolution (3-tier priority):
+ * Train data resolution (fallback chain):
  *   Tier 1 — router state (location.state.trainData) — passed from TripCard/TripDetail
  *   Tier 2 — /trains/search filtered by train_identifier_id — sourced from URL query params
- *   Tier 3 — /trains/{id} direct endpoint — final fallback, merged with Tier 2 data if partial
+ *   Tier 2.5 — synthetic Train from resumeBooking data (booking has trainNumber/class fields)
+ *   This chain is re-evaluated on every render so data resolves at any stage, not just mount.
  */
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -26,7 +27,6 @@ import { PaymentStep } from "@/components/checkout/PaymentStep";
 import { ConfirmationStep } from "@/components/checkout/ConfirmationStep";
 
 import { useTripSearch } from "@/hooks/trips/useTripSearch";
-import { useTrainDetail } from "@/hooks/trips/useTrainDetail";
 import { useCalculatePrice } from "@/hooks/bookings/useCalculatePrice";
 import { useNearbyAgents } from "@/hooks/agents/useNearbyAgents";
 import { useUpdateAddress } from "@/hooks/profile/useUpdateAddress";
@@ -67,14 +67,6 @@ import type { AgentGeolocation } from "@/types/geolocation.types";
 import type { Booking } from "@/types/bookings.types";
 import type { UserAddress } from "@/types/auth.types";
 import type { Train, CustomClassAvailability } from "@/types/trips.types";
-
-/**
- * Merge/union two Train-like objects, with `overrides` taking precedence for every field.
- * This ensures Tier 3's fields fill gaps when Tier 2 only has search-level data.
- */
-function unionMerge(base: Partial<Train>, overrides: Partial<Train>): Train {
-  return { ...base, ...overrides } as Train;
-}
 
 /**
  * Map frontend berth preference codes to IRCTC codes expected by the backend Joi schema.
@@ -121,10 +113,12 @@ function normaliseTrain(t: any): Train | null {
 /**
  * Checkout (page component)
  * @description Multi-step checkout orchestrator.
- *   Resolves train data via 3-tier priority chain:
+ *   Resolves train data via fallback chain:
  *   1. Router state (preferred)
  *   2. Search API + filter
- *   3. Direct train endpoint (fallback)
+ *   3. Synthetic from resume booking data
+ *   Each stage independently re-resolves if the previous tier yields nothing
+ *   — train data recovery works at any step, not just initial mount.
  */
 export default function Checkout() {
   const { trainNumber } = useParams<{ trainNumber: string }>();
@@ -189,6 +183,10 @@ export default function Checkout() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Resume booking data (must be above resolvedTrain — Tier 2.5 references it) ──
+  const resumeBookingId: string = urlBookingId || (draft.bookingId ?? "");
+  const { data: resumeBooking } = useBooking(resumeBookingId);
+
   // ── Tier 2: Search API (enabled only when NOT in resume mode) ──
   const tier2Enabled = !stateTrainData && !isResumeMode && !!source && !!destination && !!date && !!trainNumber;
   const { data: searchResults, isLoading: tier2Loading } = useTripSearch(
@@ -196,18 +194,12 @@ export default function Checkout() {
     tier2Enabled
   );
 
-  // ── Tier 3: Direct train endpoint (enabled only when Tier 1 is null AND Tier 2 is not loading AND hasn't resolved) ──
-  const tier3Enabled = !stateTrainData && !tier2Enabled && !!trainNumber;
-  const { data: directTrain, isLoading: tier3Loading } = useTrainDetail(
-    tier3Enabled ? trainNumber : ""
-  );
-
-  // ── Resolve train data: Tier 1 → Tier 2 → Tier 3 ──
+  // ── Resolve train data: Tier 1 → Tier 2 → Tier 2.5 (booking) ──
   const resolvedTrain: Train | null = useMemo(() => {
-    // Tier 1
+    // Tier 1: router state (from TripCard/TripDetail)
     if (stateTrainData) return normaliseTrain(stateTrainData);
 
-    // Tier 2: find in search results
+    // Tier 2: find in search results (preferred — has fresh availability data)
     if (searchResults && trainNumber) {
       const found = searchResults.find(
         (t: Train) => (t.train_identifier_id || t.trainNumber) === trainNumber
@@ -215,24 +207,33 @@ export default function Checkout() {
       if (found) return normaliseTrain(found);
     }
 
-    // Tier 3: direct endpoint, merge with any partial search data
-    if (directTrain) {
-      const tier3 = normaliseTrain(directTrain);
-      if (searchResults && trainNumber) {
-        // Union merge: Tier 2 (search) has fresher class_availability,
-        // Tier 3 (detail) has fuller train metadata
-        const partialSearch = searchResults.find(
-          (t: Train) => (t.train_identifier_id || t.trainNumber) === trainNumber
-        );
-        if (partialSearch && tier3) {
-          return unionMerge(tier3, partialSearch);
-        }
-      }
-      return tier3;
+    // Tier 2.5: synthetic train from resume booking data
+    // Kicks in when no router state and Tier 2 is disabled (e.g. resume mode
+    // with ?bookingId= but no source/dest/date params) or returned no match.
+    if (resumeBooking && resumeBooking.trainNumber) {
+      const synthetic: Train = {
+        trainNumber: resumeBooking.trainNumber || '',
+        trainName: resumeBooking.trainName || '',
+        sourceStationCode: resumeBooking.sourceStationCode || '',
+        destinationStationCode: resumeBooking.destinationStationCode || '',
+        departureTime: resumeBooking.departureTime || '',
+        arrivalTime: resumeBooking.arrivalTime || '',
+        class_availability: [{
+          travel_class_code: resumeBooking.travelClass || '',
+          fare_amount: resumeBooking.pricing?.baseFare || 0,
+          is_bookable: true,
+          quota_code: 'GN',
+          availability_status_text: 'Available',
+          availability_display_label: 'Available',
+          booking_prediction_percentage: null,
+          data_timestamp: new Date().toISOString(),
+        }] as CustomClassAvailability[],
+      } as Train;
+      return normaliseTrain(synthetic);
     }
 
     return null;
-  }, [stateTrainData, searchResults, directTrain, trainNumber]);
+  }, [stateTrainData, searchResults, resumeBooking, trainNumber]);
 
   // ── Init draft search params from URL ──
   useEffect(() => {
@@ -266,9 +267,14 @@ export default function Checkout() {
   }, [nearbyAgentsQuery.data, dispatch]);
 
   // Initialize draft when train resolves, selecting matching class if one was pre-chosen.
-  // In resume mode, only set train/class — don't auto-advance (the resume effect handles step).
+  // Re-runs on resolvedTrain changes (even if selectedTrip already exists from an
+  // earlier tier), so the Redux state stays in sync when a later tier produces
+  // richer data.
   useEffect(() => {
-    if (resolvedTrain && !selectedTrip && resolvedTrain.class_availability?.length) {
+    if (resolvedTrain && resolvedTrain.class_availability?.length) {
+      // Don't re-dispatch if the same train is already selected
+      if (selectedTrip && (selectedTrip.trainNumber === resolvedTrain.trainNumber)) return;
+
       let targetClass: CustomClassAvailability | null = null;
       if (selectedClassCode) {
         targetClass =
@@ -282,7 +288,9 @@ export default function Checkout() {
         })
       );
     }
-  }, [resolvedTrain, selectedTrip, dispatch, selectedClassCode]);
+  }, [resolvedTrain, dispatch, selectedClassCode]);
+  // NOTE: selectedTrip deliberately omitted from deps — we want this to fire on
+  // resolvedTrain change regardless of whether selectedTrip already exists.
 
   // Capture user geolocation
   const captureLocation = useCallback(() => {
@@ -301,10 +309,7 @@ export default function Checkout() {
     }
   }, [currentStep, userLocation, captureLocation]);
 
-  // ── Resume existing booking ──
-  /** bookingId we're resuming — from URL (BookingCard) or Redux draft (in-session refresh) */
-  const resumeBookingId: string = urlBookingId || (draft.bookingId ?? "");
-  const { data: resumeBooking } = useBooking(resumeBookingId);
+  // ── Resume booking prepopulation (useBooking called above at Tier 2.5) ──
 
   /** Ref tracking which bookingId we've already prepopulated (prevents double-fire) */
   const prepopulatedIdRef = useRef<string | null>(null);
@@ -376,21 +381,15 @@ export default function Checkout() {
     // Prepopulate price breakdown from booking pricing
     if (resumeBooking.pricing) {
       dispatch(setPriceBreakdown({
-        baseFare: resumeBooking.pricing.baseFare || 0,
-        perPassengerFare: 0,
+        baseFare: {
+          perPassenger: Math.round((resumeBooking.pricing.baseFare || 0) / Math.max(1, resumeBooking.passengers?.length || 1)),
+          total: resumeBooking.pricing.baseFare || 0,
+        },
         passengerCount: resumeBooking.passengers?.length || 1,
-        irctcCharges: resumeBooking.pricing.irctcCharges || 0,
-        tatkalCharges: 0,
-        convenienceFee: resumeBooking.pricing.convenienceFee || 0,
-        gst: resumeBooking.pricing.gst || 0,
-        agentFee: resumeBooking.pricing.agentFee || 0,
-        brokerageFee: 0,
-        distanceCharge: 0,
-        perKmCharge: 0,
-        estimatedDistance: 0,
-        platformCharge: resumeBooking.pricing.irctcCharges || 0,
-        homeDeliveryCharge: 0,
-        printingCharge: 0,
+        agentFee: { pct: 0, amount: resumeBooking.pricing.agentFee || 0 },
+        platformFee: { pct: 0, amount: resumeBooking.pricing.irctcCharges || 0 },
+        gst: { pct: 0, amount: resumeBooking.pricing.gst || 0 },
+        deliveryCharge: { amount: resumeBooking.pricing?.deliveryCharge ?? 0 },
         totalAmount: resumeBooking.pricing.totalAmount || 0,
       }));
     } else {
@@ -493,12 +492,47 @@ export default function Checkout() {
     calculatePrice.mutate({
       baseFare: selectedClass.fare_amount,
       passengerCount: Math.max(1, draft.passengers.length + draft.selectedFamilyMemberIds.length),
+      needHomeDelivery: draft.delivery.needHomeDelivery,
     });
   };
 
   useEffect(() => {
     if (calculatePrice.data) dispatch(setPriceBreakdown(calculatePrice.data));
   }, [calculatePrice.data, dispatch]);
+
+  /**
+   * Auto-refresh pricing whenever user enters the pricing step and the
+   * passenger count doesn't match what's already in the breakdown.
+   * Handles the case where the user goes back from pricing → passengers,
+   * changes the count, and returns to pricing.
+   */
+  useEffect(() => {
+    if (currentStep !== "pricing") return;
+    if (!selectedClass) return;
+    if (calculatePrice.isPending) return;
+
+    const effectiveCount = Math.max(
+      1,
+      draft.passengers.length + draft.selectedFamilyMemberIds.length,
+    );
+
+    const needsRecalc =
+      !draft.priceBreakdown ||
+      draft.priceBreakdown.passengerCount !== effectiveCount ||
+      (draft.delivery.needHomeDelivery && draft.priceBreakdown.deliveryCharge.amount === 0) ||
+      (!draft.delivery.needHomeDelivery && draft.priceBreakdown.deliveryCharge.amount > 0);
+
+    if (needsRecalc) {
+      dispatch(setPriceBreakdown(null));
+      markTouched("pricing");
+      calculatePrice.mutate({
+        baseFare: selectedClass.fare_amount,
+        passengerCount: effectiveCount,
+        needHomeDelivery: draft.delivery.needHomeDelivery,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   const handleAgentSelect = (agent: AgentGeolocation) => {
     dispatch(setSelectedAgent(agent));
@@ -620,7 +654,20 @@ export default function Checkout() {
     }
 
     try {
-      const passengers = draft.passengers.map((p) => ({
+      // Resolve selected family members into passenger-shaped objects
+      const familyPassengers = (user?.familyMembers ?? [])
+        .filter((fm) => draft.selectedFamilyMemberIds.includes(fm.id))
+        .map((fm) => ({
+          name: [fm.firstName, fm.lastName].filter(Boolean).join(' '),
+          age: fm.age,
+          gender: fm.gender,
+          berthPreference: undefined as string | undefined,
+          idType: undefined as string | undefined,
+          idNumber: undefined as string | undefined,
+        }));
+
+      // Manual passengers (primary user + additional manually added ones)
+      const manualPassengers = draft.passengers.map((p) => ({
         name: p.name,
         age: p.age,
         gender: p.gender,
@@ -631,9 +678,12 @@ export default function Checkout() {
         idNumber: p.idNumber,
       }));
 
+      // Manual first (primary at index 0), then family members
+      const allPassengers = [...manualPassengers, ...familyPassengers];
+
       await updateBooking.mutateAsync({
         bookingId,
-        dto: { passengers, formStage: 4 },
+        dto: { passengers: allPassengers, formStage: 4 },
       });
 
       // Sync primary passenger name back to user profile if changed
@@ -646,7 +696,7 @@ export default function Checkout() {
     }
 
     dispatch(nextStep());
-  }, [draft.bookingId, draft.passengers, user, updateBooking, updateProfile, dispatch]);
+  }, [draft.bookingId, draft.passengers, draft.selectedFamilyMemberIds, user, updateBooking, updateProfile, dispatch]);
 
   /**
    * handleAssignAgent
@@ -702,7 +752,7 @@ export default function Checkout() {
       await updateBooking.mutateAsync({
         bookingId,
         dto: {
-          ticketFare: draft.priceBreakdown.baseFare,
+          ticketFare: draft.priceBreakdown.baseFare.total,
           // totalAmount: draft.priceBreakdown.totalAmount,
           formStage: 5,
         },
@@ -742,8 +792,11 @@ export default function Checkout() {
   };
 
   // ── Loading / Error states ──
-  const isLoading = !stateTrainData && (tier2Enabled ? tier2Loading : tier3Loading);
-  const hasError = !resolvedTrain && !isLoading;
+  const isLoading = !stateTrainData && tier2Enabled && tier2Loading;
+  // Only show the error screen when ALL fallback tiers have been exhausted AND
+  // there's no existing trip data in Redux AND we're not in resume mode
+  // (the resume effect populates draft data from the booking object).
+  const hasError = !resolvedTrain && !selectedTrip && !isLoading && !isResumeMode;
 
   if (isLoading) {
     return (

@@ -5,8 +5,8 @@
  * @module components/checkout
  */
 
-import { useEffect, useRef } from 'react';
-import { MapPin, Navigation } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Navigation, CheckCircle, Clock, Star } from 'lucide-react';
 
 import type { AgentGeolocation } from '@/types/geolocation.types';
 
@@ -45,6 +45,8 @@ export function AgentMapView({
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const [hoveredAgent, setHoveredAgent] = useState<AgentGeolocation | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   // Dynamically load Leaflet (+ CSS) and render the map
   useEffect(() => {
@@ -82,6 +84,9 @@ export function AgentMapView({
         }).addTo(map);
 
         mapInstanceRef.current = map;
+
+        // User marker + agent markers both go here now — map is ready
+        setMapReady(true);
 
         // Add user marker
         if (userLocation) {
@@ -132,6 +137,7 @@ export function AgentMapView({
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+      setMapReady(false);
     };
   }, []);
 
@@ -167,20 +173,23 @@ export function AgentMapView({
 
         agents.forEach((agent) => {
           const [lng, lat] = agent.location.coordinates;
-          const icon = L.divIcon({
-            html: `<div style="background:${
-              agent.id === selectedAgentId ? '#22c55e' : '#10b981'
-            };width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`,
-            className: '',
-            iconSize: [14, 14],
-            iconAnchor: [7, 7],
+          const pinSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 40" width="28" height="40">
+            <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.27 21.73 0 14 0z" fill="#10b981" stroke="white" stroke-width="2"/>
+            <circle cx="14" cy="14" r="6" fill="white"/>
+          </svg>`;
+          const icon = L.icon({
+            iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(pinSvg),
+            iconSize: [28, 40],
+            iconAnchor: [14, 40],
           });
           const marker = L.marker([lat, lng], { icon })
             .addTo(map)
             .bindPopup(
-              `<b>${agent.agencyName}</b><br/>Distance: ${agent.distance.toFixed(1)} km<br/>Rating: ${agent.rating} ★`,
+              `<b>${agent.agencyName || 'Agent'}</b><br/>📏 ${(agent.distance ?? 0).toFixed(1)} km away${agent.rating ? `<br/>⭐ ${agent.rating} / 5` : ''}${agent.completedBookings ? `<br/>✅ ${agent.completedBookings} bookings` : ''}${typeof agent.completionRate === 'number' ? `<br/>📊 ${agent.completionRate}% success` : ''}`,
             );
           marker.on('click', () => onAgentSelect(agent));
+          marker.on('mouseover', () => setHoveredAgent(agent));
+          marker.on('mouseout', () => setHoveredAgent(null));
           markersRef.current.push(marker);
         });
 
@@ -203,7 +212,7 @@ export function AgentMapView({
     return () => {
       cancelled = true;
     };
-  }, [agents, selectedAgentId, userLocation]); // onAgentSelect omitted — unstable callback identity
+  }, [agents, selectedAgentId, userLocation, mapReady]); // onAgentSelect omitted — unstable callback identity
 
   return (
     <div className="space-y-4">
@@ -238,38 +247,39 @@ export function AgentMapView({
         )}
       </div>
 
-      {/* Agent list */}
-      {!isSearching && agents.length > 0 && (
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          <p className="text-sm font-medium">Nearby Agents ({agents.length})</p>
-          {agents.map((agent) => {
-            const [lng, lat] = agent.location.coordinates;
-            const isSelected = agent.id === selectedAgentId;
-            return (
-              <button
-                key={agent.id}
-                type="button"
-                onClick={() => onAgentSelect(agent)}
-                className={`w-full text-left rounded-md border p-3 transition-colors ${
-                  isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">{agent.agencyName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {agent.distance.toFixed(1)} km away · {agent.rating} ★
-                    </p>
-                  </div>
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                  <span>{agent.completedBookings} bookings</span>
-                  <span>{agent.completionRate}% success</span>
-                </div>
-              </button>
-            );
-          })}
+      {/* Hover card — shown when hovering a pin on the map */}
+      {!isSearching && hoveredAgent && (
+        <div className="rounded-lg border bg-card text-card-foreground p-3 shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-150">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm truncate">{hoveredAgent.agencyName || 'Agent'}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {(hoveredAgent.distance ?? 0).toFixed(1)} km away
+                {hoveredAgent.rating > 0 && (
+                  <span className="ml-2 text-amber-500">{hoveredAgent.rating} ★</span>
+                )}
+              </p>
+            </div>
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1.5" title="Agent location" />
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <CheckCircle className="h-3 w-3" />
+              {hoveredAgent.completedBookings ?? 0} booking{hoveredAgent.completedBookings !== 1 ? 's' : ''}
+            </span>
+            {typeof hoveredAgent.completionRate === 'number' && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {hoveredAgent.completionRate}% success
+              </span>
+            )}
+            {hoveredAgent.rating > 0 && (
+              <span className="flex items-center gap-1">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                {hoveredAgent.rating} / 5
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>

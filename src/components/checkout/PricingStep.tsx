@@ -25,16 +25,10 @@ interface PricingStepProps {
 /** Color assignments for each fee segment in the visual bar */
 const SEGMENT_COLORS: Record<string, string> = {
   baseFare: 'bg-blue-500',
-  irctcCharges: 'bg-sky-400',
-  tatkalCharges: 'bg-orange-400',
-  convenienceFee: 'bg-teal-400',
-  gst: 'bg-amber-400',
   agentFee: 'bg-violet-400',
-  brokerageFee: 'bg-pink-400',
-  distanceCharge: 'bg-emerald-400',
-  platformCharge: 'bg-gray-400',
-  homeDeliveryCharge: 'bg-green-500',
-  printingCharge: 'bg-yellow-500',
+  platformFee: 'bg-gray-400',
+  gst: 'bg-amber-400',
+  deliveryCharge: 'bg-green-500',
 };
 
 /**
@@ -85,19 +79,19 @@ export function PricingStep({
   }
 
   // Build segments for the visual bar (items with non-zero values)
+  const pctLabel = (pct: number, label: string) =>
+    pct > 0 ? `${label} (${pct}%)` : label;
+
   const lineItems: { key: string; label: string; amount: number }[] = [
-    { key: 'baseFare', label: `Base Fare (×${priceBreakdown.passengerCount})`, amount: priceBreakdown.baseFare },
-    { key: 'irctcCharges', label: 'IRCTC Charges', amount: priceBreakdown.irctcCharges },
-    { key: 'tatkalCharges', label: 'Tatkal Charges', amount: priceBreakdown.tatkalCharges },
-    { key: 'convenienceFee', label: 'Convenience Fee', amount: priceBreakdown.convenienceFee },
-    { key: 'gst', label: 'GST', amount: priceBreakdown.gst },
-    { key: 'agentFee', label: 'Agent Service Fee', amount: priceBreakdown.agentFee },
-    { key: 'brokerageFee', label: 'Brokerage Fee', amount: priceBreakdown.brokerageFee },
-    { key: 'distanceCharge', label: `Distance Charge (${priceBreakdown.estimatedDistance} km × ₹${priceBreakdown.perKmCharge}/km)`, amount: priceBreakdown.distanceCharge },
-    { key: 'platformCharge', label: 'Platform Charge', amount: priceBreakdown.platformCharge },
-    { key: 'homeDeliveryCharge', label: 'Home Delivery', amount: priceBreakdown.homeDeliveryCharge },
-    { key: 'printingCharge', label: 'Printing Charge', amount: priceBreakdown.printingCharge },
-  ].filter((item) => item.amount > 0);
+    { key: 'baseFare', label: `Base Fare (×${priceBreakdown.passengerCount})`, amount: priceBreakdown.baseFare.total },
+    { key: 'agentFee', label: pctLabel(priceBreakdown.agentFee.pct, 'Agent Service Fee'), amount: priceBreakdown.agentFee.amount },
+    { key: 'platformFee', label: pctLabel(priceBreakdown.platformFee.pct, 'Platform Fee'), amount: priceBreakdown.platformFee.amount },
+    { key: 'gst', label: pctLabel(priceBreakdown.gst.pct, 'GST'), amount: priceBreakdown.gst.amount },
+  ];
+
+  if (priceBreakdown.deliveryCharge.amount > 0) {
+    lineItems.push({ key: 'deliveryCharge', label: 'Home Delivery', amount: priceBreakdown.deliveryCharge.amount });
+  }
 
   const total = priceBreakdown.totalAmount;
 

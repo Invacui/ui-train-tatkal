@@ -13,7 +13,7 @@ import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
 
 // Icons
-import { AlertTriangle, ArrowLeft, UserCheck, CreditCard, Info, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, UserCheck, CreditCard, Info, Printer, ShieldCheck } from "lucide-react";
 
 // UI button component
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,9 @@ import { useCancelBooking } from "@/hooks/bookings/useCancelBooking";
 
 // Custom hook for confirming ticket delivery
 import { useConfirmDelivery } from "@/hooks/bookings/useConfirmDelivery";
+
+// Custom hook for printing receipt
+import { usePrintReceipt } from "@/hooks/print/usePrintReceipt";
 
 // Pricing breakdown card component
 import { BookingPricingCard } from "@/components/bookings/BookingPricingCard";
@@ -152,6 +155,7 @@ export default function BookingDetail() {
   const { data: booking, isLoading, error } = useBooking(id || "");
   const { mutate: cancelBookingMutate, isPending: isCancelling } = useCancelBooking();
   const { mutate: confirmDelivery, isPending: isConfirming } = useConfirmDelivery();
+  const { printReceipt } = usePrintReceipt();
 
   if (isLoading) {
     return (
@@ -444,6 +448,27 @@ export default function BookingDetail() {
                 <span className="font-mono text-sm">{booking.agentId}</span>
               </DetailRow>
             )}
+            {booking.acceptedBy && (
+              <DetailRow label="Accepted By">
+                {booking.acceptedBy.name}
+                <br />
+                <span className="text-xs text-muted-foreground">{booking.acceptedBy.email}</span>
+              </DetailRow>
+            )}
+            {booking.assignedAt && (
+              <DetailRow label="Assigned At">
+                <span title={formatDateTime(booking.assignedAt)}>
+                  {formatDateTime(booking.assignedAt)}
+                </span>
+              </DetailRow>
+            )}
+            {booking.slaDeadline && (
+              <DetailRow label="SLA Deadline">
+                <span className="text-amber-600 font-medium" title={formatDateTime(booking.slaDeadline)}>
+                  {formatDateTime(booking.slaDeadline)}
+                </span>
+              </DetailRow>
+            )}
             {booking.calculatedDistance != null && (
               <DetailRow label="Distance from Agent">{booking.calculatedDistance} km</DetailRow>
             )}
@@ -462,6 +487,12 @@ export default function BookingDetail() {
 
         {/* ── Action buttons ── */}
         <div className="flex items-center gap-3 flex-wrap">
+          {booking.paymentStatus === "paid" && (
+            <Button variant="outline" onClick={() => printReceipt(booking)}>
+              <Printer className="h-4 w-4 mr-2" />
+              Print Receipt
+            </Button>
+          )}
           {canConfirmDelivery && (
             <Button
               variant="outline"

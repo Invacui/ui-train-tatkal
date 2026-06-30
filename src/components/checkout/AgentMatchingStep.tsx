@@ -80,13 +80,16 @@ export function AgentMatchingStep({
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold">{selectedAgent.agencyName}</p>
+                <p className="font-semibold">{selectedAgent.agencyName || 'Agent'}</p>
                 <p className="text-sm text-muted-foreground">
-                  {selectedAgent.distance.toFixed(1)} km away · {selectedAgent.rating} ★
+                  {(selectedAgent.distance ?? 0).toFixed(1)} km away
+                  {selectedAgent.rating > 0 ? ` · ${selectedAgent.rating} ★` : ''}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {selectedAgent.completedBookings} bookings · {selectedAgent.completionRate}%
-                  completion rate
+                  {selectedAgent.completedBookings ?? 0} booking{selectedAgent.completedBookings !== 1 ? 's' : ''}
+                  {typeof selectedAgent.completionRate === 'number'
+                    ? ` · ${selectedAgent.completionRate}% completion rate`
+                    : ''}
                 </p>
               </div>
               <Badge variant="secondary" className="text-xs">

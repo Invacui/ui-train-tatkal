@@ -38,6 +38,8 @@ import type { Booking } from '@/types/bookings.types';
 interface BookingCardProps {
   /** The booking data to display */
   booking: Booking;
+  /** When true, renders in agent context with agent-specific routes and actions */
+  agentView?: boolean;
 }
 
 /**
@@ -48,7 +50,7 @@ interface BookingCardProps {
  * @param props BookingCardProps
  * @returns A booking summary card
  */
-export function BookingCard({ booking }: BookingCardProps) {
+export function BookingCard({ booking, agentView = false }: BookingCardProps) {
   const navigate = useNavigate();
   const [showCancel, setShowCancel] = useState(false);
   const cancelMutation = useCancelBooking();
@@ -102,12 +104,12 @@ export function BookingCard({ booking }: BookingCardProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {canContinue && (
+            {!agentView && canContinue && (
               <Button size="sm" onClick={handleContinue}>
                 Continue Booking
               </Button>
             )}
-            {canCancel && (
+            {!agentView && canCancel && (
               <Button
                 variant="outline"
                 size="sm"
@@ -117,13 +119,23 @@ export function BookingCard({ booking }: BookingCardProps) {
                 Cancel
               </Button>
             )}
-            <Button
-              variant={canContinue ? "ghost" : "outline"}
-              size="sm"
-              onClick={() => navigate(ROUTES.bookingDetail(booking.bookingId))}
-            >
-              Details
-            </Button>
+            {agentView && (
+              <Button
+                size="sm"
+                onClick={() => navigate(ROUTES.agent.bookingDetail(booking.bookingId))}
+              >
+                {['agent_assigned', 'at_counter'].includes(booking.status) ? 'Submit Ticket' : 'View Details'}
+              </Button>
+            )}
+            {!agentView && (
+              <Button
+                variant={canContinue ? "ghost" : "outline"}
+                size="sm"
+                onClick={() => navigate(ROUTES.bookingDetail(booking.bookingId))}
+              >
+                Details
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

@@ -34,6 +34,7 @@ import type {
 
 // Generic API response wrapper
 import type { ApiResponse } from '@/types/api.types';
+import type { UploadResult } from '@/types/api.types';
 
 // User type for profile responses
 import type { User } from '@/types/auth.types';
@@ -147,4 +148,31 @@ export const authService = {
    */
   updateAadhar: (dto: UpdateAadharDto) =>
     api.patch<ApiResponse<User>>('/auth/me/aadhar', dto),
+
+  /**
+   * uploadAadhar
+   * @description Uploads an Aadhar document file (image or PDF). Updates User.aadharDocUrl automatically.
+   * @param file - The file to upload (JPEG, PNG, WebP, or PDF, max 10 MB)
+   * @returns UploadResult containing the public URL
+   */
+  uploadAadhar: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<ApiResponse<UploadResult>>('/users/upload/aadhar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  /**
+   * getFileUrl
+   * @description Retrieves the stored file URL for any entity (user, agent, booking)
+   *   by document type. Useful for viewing Aadhar documents via the API instead of
+   *   relying on a potentially stale direct URL.
+   * @param entityType - 'user' | 'agent' | 'booking'
+   * @param entityId - MongoDB ObjectId of the entity
+   * @param docType - 'aadhar' | 'self-photo' | 'shop-photo' | 'ticket'
+   * @returns The API response containing the file URL
+   */
+  getFileUrl: (entityType: 'user' | 'agent' | 'booking', entityId: string, docType: 'aadhar' | 'self-photo' | 'shop-photo' | 'ticket') =>
+    api.get<ApiResponse<{ url: string }>>(`/files/${entityType}/${entityId}/${docType}`),
 };

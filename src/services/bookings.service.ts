@@ -42,17 +42,20 @@ function normaliseBooking(raw: any): Booking {
       idCardNumber: p.idCardNumber || p.idNumber,
       status: p.status,
     })),
-    pricing: raw.pricing || {
-      baseFare: raw.ticketFare || 0,
-      irctcCharges: (raw.platformFee || 0) + (raw.convenienceFee || 0),
-      tatkalCharges: raw.tatkalCharges || 0,
-      convenienceFee: raw.convenienceFee || 0,
-      gst: raw.gst || 0,
-      agentFee: raw.agentFee || 0,
-      discount: raw.discount || 0,
-      totalAmount: raw.totalAmount || 0,
+    pricing: {
+      baseFare: raw.pricing?.baseFare ?? raw.ticketFare ?? 0,
+      platformFee: raw.pricing?.platformFee ?? raw.platformFee ?? 0,
+      convenienceFee: raw.pricing?.convenienceFee ?? raw.convenienceFee ?? 0,
+      gst: raw.pricing?.gst ?? raw.gst ?? 0,
+      agentFee: raw.pricing?.agentFee ?? raw.agentFee ?? 0,
+      discount: raw.pricing?.discount ?? raw.discount ?? 0,
+      deliveryCharge: raw.pricing?.deliveryCharge ?? raw.deliveryCharge ?? 0,
+      totalAmount: raw.pricing?.totalAmount ?? raw.totalAmount ?? 0,
     },
     pnrNumber: raw.pnr || raw.pnrNumber,
+    ticketPhotoUrl: raw.ticketPhotoUrl ?? undefined,
+    eTicketUrl: raw.eTicketUrl ?? undefined,
+    pnrStatus: raw.pnrStatus ?? undefined,
     paymentId: raw.paymentId,
     razorpayOrderId: raw.razorpayOrderId,
     deliveryAddress: raw.deliveryAddress,
@@ -78,8 +81,51 @@ function normaliseBooking(raw: any): Booking {
     refundType: raw.refundType || raw.refund_type,
     isBroadcasted: raw.isBroadcasted ?? false,
     agentRequestSent: raw.agentRequestSent ?? false,
+    acceptedBy: raw.acceptedBy,
+    assignedAt: raw.assignedAt,
+    slaDeadline: raw.slaDeadline,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+  };
+}
+
+/**
+ * normalisePriceBreakdown
+ * @description Maps the raw calculate-price API response (nested objects with
+ *   pct+amount) to the frontend PriceBreakdown interface.
+ *
+ *   API returns (v2):
+ *     baseFare:       { perPassenger, total }
+ *     passengerCount: number
+ *     agentFee:       { pct, amount }
+ *     platformFee:    { pct, amount }
+ *     gst:            { pct, amount }
+ *     deliveryCharge: { amount }
+ *     totalAmount:    number
+ */
+function normalisePriceBreakdown(raw: any): PriceBreakdown {
+  return {
+    baseFare: {
+      perPassenger: raw.baseFare?.perPassenger ?? 0,
+      total: raw.baseFare?.total ?? 0,
+    },
+    passengerCount: raw.passengerCount ?? 1,
+    agentFee: {
+      pct: raw.agentFee?.pct ?? 0,
+      amount: raw.agentFee?.amount ?? 0,
+    },
+    platformFee: {
+      pct: raw.platformFee?.pct ?? 0,
+      amount: raw.platformFee?.amount ?? 0,
+    },
+    gst: {
+      pct: raw.gst?.pct ?? 0,
+      amount: raw.gst?.amount ?? 0,
+    },
+    deliveryCharge: {
+      amount: raw.deliveryCharge?.amount ?? 0,
+    },
+    totalAmount: raw.totalAmount ?? 0,
   };
 }
 
@@ -174,6 +220,9 @@ export const bookingsService = {
    * @param {CalculatePriceDto} dto - The price calculation parameters.
    * @returns A promise resolving to the full PriceBreakdown.
    */
-  calculatePrice: (dto: CalculatePriceDto) =>
-    api.post<ApiResponse<PriceBreakdown>>('/bookings/calculate-price', dto),
+  calculatePrice: async (dto: CalculatePriceDto) => {
+    const res = await api.post<ApiResponse<any>>('/bookings/calculate-price', dto);
+    res.data.data = normalisePriceBreakdown(res.data.data);
+    return res as unknown as { data: { data: PriceBreakdown } };
+  },
 };

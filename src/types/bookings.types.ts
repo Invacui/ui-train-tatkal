@@ -12,25 +12,26 @@ import type { UserAddress } from './auth.types';
 
 /**
  * PriceBreakdown
- * @description Full pricing breakdown returned by the server-side calculate-price endpoint.
- *   Frontend never computes prices — values are always fetched from the API.
+ * @description Full pricing breakdown returned by the server-side calculate-price
+ *   endpoint. The API returns nested objects so that both the percentage and the
+ *   computed rupee amount are available for display.
+ *
+ *   Shape (as of API v2):
+ *     baseFare:       { perPassenger, total }
+ *     passengerCount: number
+ *     agentFee:       { pct, amount }
+ *     platformFee:    { pct, amount }
+ *     gst:            { pct, amount }
+ *     deliveryCharge: { amount }
+ *     totalAmount:    number
  */
 export interface PriceBreakdown {
-  baseFare: number;
-  perPassengerFare: number;
+  baseFare: { perPassenger: number; total: number };
   passengerCount: number;
-  irctcCharges: number;
-  tatkalCharges: number;
-  convenienceFee: number;
-  gst: number;
-  agentFee: number;
-  brokerageFee: number;
-  distanceCharge: number;
-  perKmCharge: number;
-  estimatedDistance: number;
-  platformCharge: number;
-  homeDeliveryCharge: number;
-  printingCharge: number;
+  agentFee: { pct: number; amount: number };
+  platformFee: { pct: number; amount: number };
+  gst: { pct: number; amount: number };
+  deliveryCharge: { amount: number };
   totalAmount: number;
 }
 
@@ -38,6 +39,7 @@ export interface PriceBreakdown {
 export interface CalculatePriceDto {
   baseFare: number;
   passengerCount?: number;
+  needHomeDelivery?: boolean;
 }
 
 // Lifecycle status of a booking
@@ -61,12 +63,12 @@ export type BookingStatus =
 // Pricing breakdown for a booking
 export interface BookingPricing {
   baseFare: number;
-  irctcCharges: number;
-  tatkalCharges: number;
+  platformFee: number;
   convenienceFee: number;
   gst: number;
   agentFee: number;
   discount: number;
+  deliveryCharge?: number;
   totalAmount: number;
 }
 
@@ -85,6 +87,9 @@ export interface Booking {
   passengers: Passenger[];
   pricing: BookingPricing;
   pnrNumber?: string;
+  ticketPhotoUrl?: string;
+  eTicketUrl?: string;
+  pnrStatus?: string;
   /** Payment tracking */
   paymentId?: string;
   razorpayOrderId?: string;
@@ -123,6 +128,12 @@ export interface Booking {
   /** Broadcasting / agent-request flags */
   isBroadcasted?: boolean;
   agentRequestSent?: boolean;
+  /** Agent who accepted the booking */
+  acceptedBy?: { name: string; email: string };
+  /** When the agent was assigned */
+  assignedAt?: string;
+  /** SLA deadline for the agent to book */
+  slaDeadline?: string;
   createdAt: string;
   updatedAt: string;
 }

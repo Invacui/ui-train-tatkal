@@ -69,6 +69,13 @@ export function PassengerStep({
     }
   }, []); // Run only on mount
 
+  // Auto-select all family members on mount (user can deselect individually)
+  useEffect(() => {
+    if (familyMembers.length > 0 && selectedFamilyIds.length === 0) {
+      onFamilySelectionChange(familyMembers.map((m) => m.id));
+    }
+  }, []); // Run only on mount
+
   const isPrimaryNameChanged =
     passengers[0] && passengers[0].name !== user.name;
 
